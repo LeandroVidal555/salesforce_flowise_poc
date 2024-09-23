@@ -28,11 +28,6 @@ class AccessStack(cdk.Stack):
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_id"
         ).string_value
 
-        #pgres_ip = ssm.StringParameter.from_string_parameter_name(
-        #    self, "SSMParam_PGRES_IP",
-        #    string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/pgres_ip"
-        #).string_value
-
         #####################################################
         ##### TAGS ##########################################
         #####################################################
@@ -43,47 +38,11 @@ class AccessStack(cdk.Stack):
         cdk.Tags.of(self).add("PrimaryContact", cg["tags"]["contact"])
 
 
-        """
-        #####################################################
-        ##### LOAD BALANCING - RDS NLB ######################
-        #####################################################
-        # NOTE: TEMPORARY. Only for development practices in staging acc.
-
-        # Create an NLB
-        nlb = elbv2.NetworkLoadBalancer(
-            self, "NLB_PGres",
-            load_balancer_name=f"{cg['common_prefix']}-{cg['env']}-pgres-nlb",
-            vpc=vpc,
-            internet_facing=True,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC)
-        )
-
-        # Define a target group for port 5432
-        target_group = elbv2.NetworkTargetGroup(
-            self, "TG_PGres",
-            target_group_name = f"{cg['common_prefix']}-{cg['env']}-pgres-nlb-tg",
-            port=cs['pgres_port'],
-            vpc=vpc,
-            target_type = elbv2.TargetType.IP,
-            protocol=elbv2.Protocol.TCP
-        )
-
-        target_group.add_target(
-            elbv2_targets.IpTarget(
-                ip_address=pgres_ip,
-                port=5432
-            )
-        )  
-
-        # Add a listener to the NLB
-        nlb.add_listener("Listener_NLB_PGres", port=cs['pgres_port'], default_target_groups=[target_group])
-        """
-
-
         #####################################################
         ##### LOAD BALANCING - EC2 ALB ######################
         #####################################################
 
+        """
         secret_cf_key = secretsmanager.Secret(
             self, "Secret_CF_Header_Key",
             secret_name=f"{cg['common_prefix']}-{cg['env']}-cf-header-key",
@@ -143,18 +102,36 @@ class AccessStack(cdk.Stack):
                 interval=cdk.Duration.seconds(15)
             )
         )
-        
+        """
         
         #####################################################
         ##### CLOUDFRONT - EC2 Webservice ###################
         #####################################################
     
-        # CloudFront origin pointing to the EC2 instance
-        origin = cf_origins.HttpOrigin(
-            domain_name=alb_ws.load_balancer_dns_name,
-            http_port=8080,
+        # CloudFront origin pointing to the ALB in front of the EC2 instance
+        #origin = cf_origins.HttpOrigin(
+        #    domain_name=alb_ws.load_balancer_dns_name,
+        #    http_port=8080,
+        #    protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        #    custom_headers={"x-cloudfront-secret-key": secret_cf_key}
+        #)
+
+        origin_80 = cf_origins.HttpOrigin(
+            domain_name=, # EC2 instance public DNS
+            http_port=80,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
-            custom_headers={"x-cloudfront-secret-key": secret_cf_key}
+        )
+
+        origin_443 = cf_origins.HttpOrigin(
+            domain_name=, # EC2 instance public DNS
+            http_port=443,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        )
+
+        origin_3000 = cf_origins.HttpOrigin(
+            domain_name=, # EC2 instance public DNS
+            http_port=3000,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
 
         # CloudFront distribution
@@ -163,9 +140,6 @@ class AccessStack(cdk.Stack):
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origin,
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
-                cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
                 origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
-                response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
-                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
             )
         )

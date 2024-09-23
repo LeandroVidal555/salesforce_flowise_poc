@@ -1,7 +1,7 @@
 global:
   account: '649999766497'
   region: 'us-east-1'
-  common_prefix: 'sf-fw-poc'
+  common_prefix: 'sf-poc'
   env: 'dev'
   tags:
     owner: 'EPWERY'
