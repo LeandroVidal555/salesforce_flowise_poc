@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-import os
+import yaml
 
 import aws_cdk as cdk
 
-from iac.iac_stack import IacStack
+from iac.net_stack import NetworkingStack
+from iac.sec_stack import SecurityStack
+from iac.com_stack import ComputeStack
+from iac.db_stack  import DatabaseStack
+from iac.acc_stack import AccessStack
 
+# load config parameters from config file
+with open("../config.yml", 'r') as file:
+    config = yaml.safe_load(file)
+
+account       = config['global']['account']
+region        = config['global']['region']
+common_prefix = config['global']['common_prefix']
+env           = config['global']['env']
 
 app = cdk.App()
-IacStack(app, "IacStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
-
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
-
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+NetworkingStack(app, f"{common_prefix}-{env}-networking-stack", config=config, env=cdk.Environment(account=account, region=region))
+SecurityStack  (app, f"{common_prefix}-{env}-security-stack",   config=config, env=cdk.Environment(account=account, region=region))
+ComputeStack   (app, f"{common_prefix}-{env}-compute-stack",    config=config, env=cdk.Environment(account=account, region=region))
+DatabaseStack  (app, f"{common_prefix}-{env}-database-stack",   config=config, env=cdk.Environment(account=account, region=region))
+AccessStack    (app, f"{common_prefix}-{env}-access-stack",     config=config, env=cdk.Environment(account=account, region=region))
 
 app.synth()
