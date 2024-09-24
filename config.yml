@@ -2,15 +2,15 @@ global:
   account: '649999766497'
   region: 'us-east-1'
   common_prefix: 'sf-poc'
-  env: 'dev'
+  env: 'poc'
   tags:
     owner: 'EPWERY'
     project: 'SalesForce Flowise PoC'
-    env: 'dev'
+    env: 'poc'
     contact: 'lmv.vidal@gmail.com'
 
 networking:
-  vpc_cidr: '172.32.0.0/16'
+  vpc_cidr: '172.33.0.0/16'
   az_count: 3
   public_subnet_name: 'PublicSubnet'
   public_subnet_prefix: 20
