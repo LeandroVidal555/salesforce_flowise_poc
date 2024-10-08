@@ -2,6 +2,7 @@ import aws_cdk as cdk
 
 from aws_cdk import(
     aws_ec2 as ec2,
+    aws_dynamodb as dynamodb,
     aws_rds as rds,
     aws_secretsmanager as secretsmanager
 )
@@ -43,7 +44,7 @@ class DatabaseStack(cdk.Stack):
         rds.DatabaseInstance(
             self, "RDS_Pgres",
             instance_identifier = f"{cg['common_prefix']}-{cg['env']}-pgres",
-            database_name = "corbo",
+            database_name = cs["database_name"],
             engine = rds.DatabaseInstanceEngine.postgres(
                 version = rds.PostgresEngineVersion.VER_16_3),
             instance_type = ec2.InstanceType.of(
@@ -53,7 +54,7 @@ class DatabaseStack(cdk.Stack):
             security_groups = [sg_pgres],
             multi_az = False,
             allocated_storage = 20,
-            max_allocated_storage = 100,
+            max_allocated_storage = 20,
             credentials = rds.Credentials.from_secret(secret_pgres_creds),
             publicly_accessible = False,
             iam_authentication = True
@@ -69,3 +70,22 @@ class DatabaseStack(cdk.Stack):
 # TODO: come up with an automated method.
 
 
+        #####################################################
+        ##### DYNAMODB ######################################
+        #####################################################
+
+        # Create a DynamoDB table
+        dynamodb.Table(
+            self, "MyDDBTable",
+            partition_key=dynamodb.Attribute(
+                name="pk",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="sk", 
+                type=dynamodb.AttributeType.STRING
+            ),
+            table_name=f"{cg['common_prefix']}-{cg['env']}-extxt-table",
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
+        )

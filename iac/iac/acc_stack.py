@@ -4,10 +4,7 @@ from aws_cdk import(
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
     aws_ec2 as ec2,
-    aws_elasticloadbalancingv2 as elbv2,
-    aws_elasticloadbalancingv2_targets as elbv2_targets,
-    aws_ssm as ssm,
-    aws_secretsmanager as secretsmanager
+    aws_ssm as ssm
 )
 
 
@@ -21,11 +18,11 @@ class AccessStack(cdk.Stack):
 
         vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_name=f"{cg['common_prefix']}-{cg['env']}-vpc")
 
-        sg_alb_ws = ec2.SecurityGroup.from_lookup_by_name(self, "SG_ALB_WS", security_group_name=f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg", vpc=vpc)
+        #sg_alb_ws = ec2.SecurityGroup.from_lookup_by_name(self, "SG_ALB_WS", security_group_name=f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg", vpc=vpc)
 
-        ec2_instance_id = ssm.StringParameter.from_string_parameter_name(
-            self, "SSMParam_EC2_ID",
-            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_id"
+        ec2_instance_dns = ssm.StringParameter.from_string_parameter_name(
+            self, "SSMParam_EC2_DNS",
+            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
         ).string_value
 
         #####################################################
@@ -116,30 +113,45 @@ class AccessStack(cdk.Stack):
         #    custom_headers={"x-cloudfront-secret-key": secret_cf_key}
         #)
 
-        origin_80 = cf_origins.HttpOrigin(
-            domain_name=, # EC2 instance public DNS
+        be_origin_80 = cf_origins.HttpOrigin(
+            domain_name=ec2_instance_dns, # EC2 instance public DNS
             http_port=80,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
 
-        origin_443 = cf_origins.HttpOrigin(
-            domain_name=, # EC2 instance public DNS
-            http_port=443,
-            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
-        )
+        #be_origin_443 = cf_origins.HttpOrigin(
+        #    domain_name=, # EC2 instance public DNS
+        #    http_port=443,
+        #    protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        #)
 
-        origin_3000 = cf_origins.HttpOrigin(
-            domain_name=, # EC2 instance public DNS
+        ui_origin = cf_origins.HttpOrigin(
+            domain_name=ec2_instance_dns, # EC2 instance public DNS
             http_port=3000,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
-
+        
+        ui_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        be_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         # CloudFront distribution
         cloudfront.Distribution(
             self, "CF_WS_Distribution",
             default_behavior=cloudfront.BehaviorOptions(
-                origin=origin,
+                origin=be_origin_80,
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=be_cache_policy,
                 origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
-            )
+                response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
+            ),
+            additional_behaviors={
+                "/flowise_ui/*": cloudfront.BehaviorOptions(
+                    origin=ui_origin,
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+                    cache_policy=ui_cache_policy,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                )
+            },
+            price_class = cloudfront.PriceClass.PRICE_CLASS_100
         )
