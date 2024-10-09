@@ -53,6 +53,7 @@ class ComputeStack(cdk.Stack):
 
         vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_name=f"{cg['common_prefix']}-{cg['env']}-vpc")
         role_ec2 = iam.Role.from_role_name(self, "Role_EC2", role_name=f"{cg['common_prefix']}-{cg['env']}-ec2-role")
+        role_lambda = iam.Role.from_role_name(self, "Role_lambda", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-role")
         sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
 
 
@@ -119,7 +120,8 @@ class ComputeStack(cdk.Stack):
             entry="iac/lambda_code",
             index="lambda_function.py", 
             handler="lambda_handler",
-            runtime=_lambda.Runtime.PYTHON_3_12
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            role=role_lambda
         )
 
 

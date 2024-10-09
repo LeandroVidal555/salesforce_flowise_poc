@@ -105,3 +105,17 @@ class SecurityStack(cdk.Stack):
         sg_postgres.add_ingress_rule(peer=sg_ec2, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip1, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip2, connection=ec2.Port.tcp(cs["pgres_port"]))
+
+
+        #####################################################
+        ##### Lambda ########################################
+        #####################################################
+
+        # Create an IAM Role for the EC2 instance
+        role_lambda = iam.Role(
+            self, "Role_Lambda",
+            role_name = f"{cg['common_prefix']}-{cg['env']}-lambda-role",
+            assumed_by = iam.ServicePrincipal("lambda.amazonaws.com"),
+            description="Role for the Lambda Processor function"
+        )
+        attach_policy_doc(self, "role_lambda", role_lambda)
