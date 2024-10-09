@@ -42,7 +42,6 @@ def iac_output(value):
     ssm_client.put_parameter(Name="iac-output", Value=value, Type='String', Overwrite=True)
 
 
-
 class ComputeStack(cdk.Stack):
 
     def __init__(self, scope: cdk.App, construct_id: str, config: dict, **kwargs) -> None:

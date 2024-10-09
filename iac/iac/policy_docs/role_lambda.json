@@ -1,0 +1,48 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Description": "CloudWatch - logs creation",
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:649999766497:*"
+        },
+        {
+            "Description": "CloudWatch - logs write",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:649999766497:log-group:/aws/lambda/sf-fw-poc-process:*"
+            ]
+        },
+        {
+            "Description": "DynamoDB",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem"
+            ],
+            "Resource": "arn:aws:dynamodb:us-east-1:649999766497:table/sf-fw-poc-extracted-text"
+        },
+        {
+            "Description": "S3",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::sf-fw-poc-files/*"
+        },
+        {
+            "Description": "Secrets Manager",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-connected-app-creds-*"
+        }
+    ]
+}
