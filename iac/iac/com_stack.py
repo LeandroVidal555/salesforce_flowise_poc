@@ -140,7 +140,7 @@ class ComputeStack(cdk.Stack):
             self, "SF_EventRule",
             event_bus=existing_event_bus,  # Link the existing EventBus
             event_pattern={
-                "source": ['/'.join(cs['event_bus_arn'].split('/')[1:])],
+                "source": ["aws.events"],
                 "detail_type": ["Financial_Event__e"],
                 "detail": { "payload": { "Action__c": ["ImportPDF"] } }
             },
