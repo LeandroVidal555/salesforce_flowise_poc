@@ -79,7 +79,7 @@ class ComputeStack(cdk.Stack):
             )
         )
         
-        keypair_ec2 = ec2.KeyPair.from_key_pair_name(self, "KeyPair_EC2_Import", f"{cg['common_prefix']}-{cg['env']}-flowise-keypair")
+        keypair_ec2 = ec2.KeyPair.from_key_pair_name(self, "KeyPair_EC2_Import", f"{cg['common_prefix']}-{cg['env']}-keypair")
 
         # Define the EC2 instance
         ec2_instance = ec2.Instance(
