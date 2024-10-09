@@ -25,7 +25,7 @@
                 "dynamodb:BatchWriteItem",
                 "dynamodb:PutItem"
             ],
-            "Resource": "arn:aws:dynamodb:us-east-1:649999766497:table/sf-fw-poc-extracted-text"
+            "Resource": "arn:aws:dynamodb:us-east-1:649999766497:table/sf-fw-poc-extxt-table"
         },
         {
             "Description": "S3",

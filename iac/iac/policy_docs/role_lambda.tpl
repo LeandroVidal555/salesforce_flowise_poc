@@ -25,7 +25,7 @@
                 "dynamodb:BatchWriteItem",
                 "dynamodb:PutItem"
             ],
-            "Resource": "arn:aws:dynamodb:${REGION}:${AWS_ACCOUNT_ID}:table/${COMMON_PREFIX}-${ENV}-extracted-text"
+            "Resource": "arn:aws:dynamodb:${REGION}:${AWS_ACCOUNT_ID}:table/${COMMON_PREFIX}-${ENV}-extxt-table"
         },
         {
             "Description": "S3",
