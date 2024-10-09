@@ -139,13 +139,9 @@ class ComputeStack(cdk.Stack):
             self, "SF_EventRule",
             event_bus=existing_event_bus,  # Link the existing EventBus
             event_pattern={
-                "source": ["aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU"],
-                "detail-type": ["Financial_Event__e"],
-                "detail": {
-                    "payload": {
-                    "Action__c": ["ImportPDF"]
-                    }
-                }
+                "source": ['/'.join(cs['event_bus_arn'].split('/')[1:])],
+                "detail_type": ["Financial_Event__e"],
+                "detail": { "payload": { "Action__c": ["ImportPDF"] } }
             },
             description="Rule to trigger Lambda on SF event",
             enabled=True
