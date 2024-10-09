@@ -71,7 +71,7 @@ class ComputeStack(cdk.Stack):
         #####################################################
 
         volume = ec2.BlockDevice(
-            device_name="/dev/xvda",
+            device_name=cs["ebs_device_name"],
             volume=ec2.BlockDeviceVolume.ebs(
                 volume_size=27,
                 volume_type=ec2.EbsDeviceVolumeType.GP3,

@@ -131,15 +131,15 @@ class AccessStack(cdk.Stack):
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
         
-        ui_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
-        be_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        cache_policy_be = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        cache_policy_ui = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         # CloudFront distribution
         cloudfront.Distribution(
             self, "CF_WS_Distribution",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=be_origin_80,
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
-                cache_policy=be_cache_policy,
+                cache_policy=cache_policy_be,
                 origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
                 response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
@@ -148,7 +148,7 @@ class AccessStack(cdk.Stack):
                 "/flowise_ui/*": cloudfront.BehaviorOptions(
                     origin=ui_origin,
                     allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
-                    cache_policy=ui_cache_policy,
+                    cache_policy=cache_policy_ui,
                     origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
                     viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
                 )
