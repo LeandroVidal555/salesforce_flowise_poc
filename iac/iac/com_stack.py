@@ -117,6 +117,7 @@ class ComputeStack(cdk.Stack):
         lambda_fn = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
             entry="iac/lambda_code",
+            environment=cs['lambda_envvars'],
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
