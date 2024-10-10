@@ -22,6 +22,7 @@ networking:
 security:
   pgres_port: 5432
   cf_prefix_list: 'pl-3b927c52'
+  local_ip: '152.168.252.102/32'
 
 database:
   database_name: 'epwery'

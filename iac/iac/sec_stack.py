@@ -72,19 +72,19 @@ class SecurityStack(cdk.Stack):
         attach_policy_doc(self, "role_ec2", role_ec2)
 
         # Create a security group for the ALB pointing to EC2 instance
-        sg_alb_ec2 = ec2.SecurityGroup(
-            self, "SG_ALB_WS",
-            security_group_name = f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg",
-            vpc = vpc,
-            description = "SG for ALB pointing to the WebServer in EC2 instance"
-        )
+        #sg_alb_ec2 = ec2.SecurityGroup(
+        #    self, "SG_ALB_WS",
+        #    security_group_name = f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg",
+        #    vpc = vpc,
+        #    description = "SG for ALB pointing to the WebServer in EC2 instance"
+        #)
 
         # Add rules to allow access from 8080 CloudFront origins
-        sg_alb_ec2.add_ingress_rule(
-            peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
-            connection=ec2.Port.tcp(8080),
-            description="Allow HTTPS traffic only from 8080 CloudFront origins"
-        )
+        #sg_alb_ec2.add_ingress_rule(
+        #    peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
+        #    connection=ec2.Port.tcp(8080),
+        #    description="Allow HTTPS traffic only from 8080 CloudFront origins"
+        #)
 
         # Create a security group for the EC2 instance
         sg_ec2 = ec2.SecurityGroup(
@@ -94,11 +94,18 @@ class SecurityStack(cdk.Stack):
             description = "SG for EC2 instance"
         )
 
-        # Allow traffic from the ALB (introduced as its SG)
+        # Allow traffic from CF
         sg_ec2.add_ingress_rule(
-            peer=ec2.Peer.security_group_id(sg_alb_ec2.security_group_id),
-            connection=ec2.Port.tcp(8080),
-            description="Allow traffic from ALB (this is its SG id)"
+            peer=ec2.Peer.ipv4(cs['local_ip']),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH traffic from local PC"
+        )
+
+        # Allow traffic from CF
+        sg_ec2.add_ingress_rule(
+            peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
+            connection=ec2.Port.tcp(80),
+            description="Allow traffic from CF"
         )
 
         # Add rules to allow access to RDS from the EC2 instance
