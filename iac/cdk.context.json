@@ -6,5 +6,75 @@
     "us-east-1d",
     "us-east-1e",
     "us-east-1f"
-  ]
+  ],
+  "vpc-provider:account=649999766497:filter.tag:Name=sf-fw-poc-vpc:region=us-east-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-0684ed7592b1272c1",
+    "vpcCidrBlock": "172.33.0.0/16",
+    "ownerAccountId": "649999766497",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "sf-fw-poc-IsolatedSubnet",
+        "type": "Isolated",
+        "subnets": [
+          {
+            "subnetId": "subnet-0c57d33b44d8fdacd",
+            "cidr": "172.33.64.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-045ca1150853c85f6"
+          },
+          {
+            "subnetId": "subnet-05007717a638c51de",
+            "cidr": "172.33.80.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-0a6bb410e0c586ccd"
+          }
+        ]
+      },
+      {
+        "name": "sf-fw-poc-PrivateSubnet",
+        "type": "Private",
+        "subnets": [
+          {
+            "subnetId": "subnet-0b20ff8829e73f688",
+            "cidr": "172.33.32.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-0787aedc19a196cc9"
+          },
+          {
+            "subnetId": "subnet-0f2a52233f763f3c9",
+            "cidr": "172.33.48.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-07bf36b24ab78ef27"
+          }
+        ]
+      },
+      {
+        "name": "sf-fw-poc-PublicSubnet",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-09284f57b2b6c2ed4",
+            "cidr": "172.33.0.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-04afcca4734d88fc8"
+          },
+          {
+            "subnetId": "subnet-0361a33c0fd9c4681",
+            "cidr": "172.33.16.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-0a1b9af739da77190"
+          }
+        ]
+      }
+    ]
+  },
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-pgres-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-062c40f98b3146e7d",
+    "allowAllOutbound": false
+  },
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-0e43cdbfa0bb29ce0",
+    "allowAllOutbound": false
+  }
 }
