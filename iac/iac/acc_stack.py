@@ -137,20 +137,20 @@ class AccessStack(cdk.Stack):
         cloudfront.Distribution(
             self, "CF_WS_Distribution",
             default_behavior=cloudfront.BehaviorOptions(
-                origin=be_origin_80,
-                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
-                cache_policy=cache_policy_be,
-                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
-                response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
-                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
+                origin=ui_origin,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+                cache_policy=cache_policy_ui,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
             ),
             additional_behaviors={
-                "/flowise_ui/*": cloudfront.BehaviorOptions(
-                    origin=ui_origin,
-                    allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
-                    cache_policy=cache_policy_ui,
-                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+                "/api_80/*": cloudfront.BehaviorOptions(
+                    origin=be_origin_80,
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=cache_policy_be,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                    response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
                 )
             },
             price_class = cloudfront.PriceClass.PRICE_CLASS_100
