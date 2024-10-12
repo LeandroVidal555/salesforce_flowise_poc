@@ -31,6 +31,7 @@ compute:
   ec2_machine_type: 't2.micro'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/default' #'arn:aws:events:us-west-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU'
+  sf_event_source: 'aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU'
   lambda_envvars:
     BASE_URL: 'https://sturla3-dev-ed.develop.my.salesforce.com'
     BUCKET_NAME: 'sf-fw-poc-files'

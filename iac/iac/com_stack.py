@@ -116,12 +116,15 @@ class ComputeStack(cdk.Stack):
         # this experimental class automatically installs reqs.txt file deps
         lambda_fn = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-process",
             entry="iac/lambda_code",
             environment=cs['lambda_envvars'],
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            role=role_lambda
+            role=role_lambda,
+            memory_size=256,
+            timeout=cdk.Duration.seconds(30)
         )
 
 
@@ -140,7 +143,7 @@ class ComputeStack(cdk.Stack):
             self, "SF_EventRule",
             event_bus=existing_event_bus,  # Link the existing EventBus
             event_pattern={
-                "source": ["aws.events"],
+                "source": [cs['sf_event_source']],
                 "detail_type": ["Financial_Event__e"],
                 "detail": { "payload": { "Action__c": ["ImportPDF"] } }
             },

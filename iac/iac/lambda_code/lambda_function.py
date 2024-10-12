@@ -3,7 +3,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 import requests
-import fitz
+from fitz import open as fitz_open
 
 # Initialize the DynamoDB client
 dynamodb = boto3.resource('dynamodb')
@@ -72,7 +72,7 @@ def sf_get_doc_text(doc_id, token):
                 file.write(chunk)
 
     print("Extracting text...")
-    with fitz.open("/tmp/download.pdf") as pdf_file:  
+    with fitz_open("/tmp/download.pdf") as pdf_file:  
         with open("/tmp/extracted.txt", 'w') as txt_file:
             for page in pdf_file:
                 txt_file.write(page.get_text("text") + '\n')
