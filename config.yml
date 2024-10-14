@@ -45,4 +45,4 @@ s3:
 access:
   pgres_port: 5432
   cache_policy_be: 'disabled'
-  cache_policy_ui: 'enabled'
+  cache_policy_ui: 'disabled'

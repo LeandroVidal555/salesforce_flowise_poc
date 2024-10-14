@@ -138,7 +138,7 @@ class AccessStack(cdk.Stack):
             self, "CF_WS_Distribution",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=ui_origin,
-                allowed_methods=cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
                 cache_policy=cache_policy_ui,
                 origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
