@@ -110,7 +110,7 @@ class SecurityStack(cdk.Stack):
 
         # Allow traffic from CF - UI
         sg_ec2.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
+            peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
             connection=ec2.Port.tcp(3000),
             description="Allow traffic from CF - UI"
         )
