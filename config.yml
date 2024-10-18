@@ -34,7 +34,7 @@ compute:
   sf_event_source: 'aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU'
   lambda_envvars:
     BASE_URL: 'https://sturla3-dev-ed.develop.my.salesforce.com'
-    BUCKET_NAME: 'sf-fw-poc-files'
+    BUCKET_PATH: 'sf-fw-poc-files/salesforce_extracted'
     DYNAMODB_TABLE_NAME: 'sf-fw-poc-extxt-table'
     FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
     SECRET_CREDS_NAME: 'sf-fw-poc-connected-app-creds'

@@ -16,7 +16,8 @@ s3 = boto3.client('s3')
 secret_creds_name = os.getenv("SECRET_CREDS_NAME")
 base_url = os.getenv("BASE_URL")
 file_download_path = os.getenv("FILE_DOWNLOAD_PATH")
-bucket = os.getenv("BUCKET_NAME")
+bucket = os.getenv("BUCKET_PATH").split("/")[0]
+bucket_path = "/".join(os.getenv("BUCKET_PATH").split("/")[1:])
 dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME")
 
 
@@ -88,7 +89,7 @@ def upload_files_s3(doc_id):
     # Upload the files
     print("Uploading original PDF file...")
     try:
-        file_name = doc_id + "_original.pdf"
+        file_name = f"{bucket_path}/{doc_id}_original.pdf"
         s3.upload_file("/tmp/download.pdf", bucket, file_name)
         print(f"File {file_name} uploaded to {bucket}")
     except FileNotFoundError:
@@ -96,7 +97,7 @@ def upload_files_s3(doc_id):
 
     print("Uploading text file...")
     try:
-        file_name = doc_id + "_extracted.txt"
+        file_name = f"{bucket_path}/{doc_id}_extracted.txt"
         s3.upload_file("/tmp/extracted.txt", bucket, file_name)
         print(f"File {file_name} uploaded to {bucket}")
     except FileNotFoundError:

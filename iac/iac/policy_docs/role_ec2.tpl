@@ -57,6 +57,12 @@
             "Resource": [
                 "arn:aws:rds-db:${REGION}:${AWS_ACCOUNT_ID}:dbuser:${PGRES_ID}/epwery"
             ]
+        },
+        {
+            "Description": "S3",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::${COMMON_PREFIX}-${ENV}-files/*"
         }
     ]
 }
