@@ -123,8 +123,8 @@ class ComputeStack(cdk.Stack):
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda,
-            memory_size=256,
-            timeout=cdk.Duration.seconds(30)
+            memory_size=512,
+            timeout=cdk.Duration.seconds(120)
         )
 
 

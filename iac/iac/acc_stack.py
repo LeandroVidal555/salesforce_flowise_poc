@@ -129,6 +129,7 @@ class AccessStack(cdk.Stack):
             domain_name=ec2_instance_dns, # EC2 instance public DNS
             http_port=3000,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+            read_timeout=cdk.Duration.seconds(60)
         )
         
         cache_policy_be = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED

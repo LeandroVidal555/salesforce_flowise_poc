@@ -2,6 +2,7 @@ import json
 import os
 import time
 import requests
+import urllib.parse
 import boto3
 from botocore.exceptions import ClientError
 from fitz import open as fitz_open
@@ -97,31 +98,38 @@ def sf_get_doc_text(doc_id, token):
 def upload_files_s3(filename):
     # Upload the files - text extract
     print("Uploading original PDF file...")
-    filename_short = filename.split(".")[0]
+    filename_decoded = urllib.parse.unquote(filename)
+    filename_base, filename_ext = os.path.splitext(filename_decoded)
     try:
-        file_path = f"{bucket_path_extxt}/{filename_short}_original.pdf"
+        file_path = f"{bucket_path_extxt}/{filename_base}_original.pdf"
         s3.upload_file("/tmp/download.pdf", bucket_name, file_path)
         print(f"File {file_path} uploaded to {bucket_name}")
     except FileNotFoundError:
         print(f"The file {file_path} was not found")
+    except Exception as e:
+        print(f"Found error while uploading {file_path}: {e}")
 
     print("Uploading text file...")
     try:
-        file_path = f"{bucket_path_extxt}/{filename_short}_extracted.txt"
+        file_path = f"{bucket_path_extxt}/{filename_base}_extracted.txt"
         s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
         print(f"File {file_path} uploaded to {bucket_name}")
     except FileNotFoundError:
         print(f"The file {file_path} was not found")
+    except Exception as e:
+        print(f"Found error while uploading {file_path}: {e}")
 
     # Upload the files - flowise document store
-    if filename.startswith("contacts_"):
+    if filename_decoded.startswith("contacts_"):
         print("Uploading original PDF file...")
         try:
-            file_path = f"{bucket_path_fw_ds}/{filename}"
+            file_path = f"{bucket_path_fw_ds}/{filename_decoded}"
             s3.upload_file(f"/tmp/download.pdf", bucket_name, file_path)
             print(f"File {file_path} uploaded to {bucket_name}")
         except FileNotFoundError:
             print(f"The file {file_path} was not found")
+        except Exception as e:
+            print(f"Found error while uploading {file_path}: {e}")
 
 
 
@@ -152,6 +160,7 @@ def fw_get_api_key():
 
 def load_process_upsert(fw_api_key):
     # PROCESS/CHUNK IN DOC STORE
+    print("Chunking and Processing data...", end="")
     res = requests.post(
         "https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/loader/process",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
@@ -165,7 +174,7 @@ def load_process_upsert(fw_api_key):
 
     # WAIT FOR CHUNK PROCESSING
     l_status = "null"
-    print("Chunking and Processing data...", end="")
+    print("Waiting for data Chunking and Processing...", end="")
     while l_status != "SYNC":
         # GET DOC STORE
         res = requests.get(
@@ -174,12 +183,13 @@ def load_process_upsert(fw_api_key):
         )
         if res.status_code == 200:
             l_status = res.json()["loaders"][0]["status"]
-        time.sleep(1)
+        #time.sleep(1)
         print(".", end="")
-    print("\nData chunking and Processing successful")
+    print("\nData Chunking and Processing successful")
 
 
     # UPSERT FROM DOC STORE
+    print("Upserting vector data...", end="")
     res = requests.post(
         "https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/vectorstore/insert",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
