@@ -42,7 +42,10 @@
                 "secretsmanager:DescribeSecret",
                 "secretsmanager:ListSecretVersionIds"
             ],
-            "Resource": "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-connected-app-creds-*"
+            "Resource": [
+                "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-connected-app-creds-*",
+                "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-fw-api-key-*"
+            ]
         }
     ]
 }
