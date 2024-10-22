@@ -183,7 +183,7 @@ def load_process_upsert(fw_api_key):
         )
         if res.status_code == 200:
             l_status = res.json()["loaders"][0]["status"]
-        #time.sleep(1)
+        time.sleep(1)
         print(".", end="")
     print("\nData Chunking and Processing successful")
 
