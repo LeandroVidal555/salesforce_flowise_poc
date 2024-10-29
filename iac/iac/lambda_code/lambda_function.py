@@ -157,46 +157,15 @@ def fw_get_api_key():
 
 
 
-# TODO: INTERACT WITH CHATFLOW VECTOR UPSERT DIRECTLY, OVERRIDE "metadata" AND "prefix"
 def load_process_upsert(rec_id, fw_api_key):
-    # PROCESS/CHUNK IN DOC STORE
-    print("Chunking and Processing data...", end="")
-    res = requests.post(
-        "https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/loader/process",
-        headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"storeId":fw_docstore,"id":fw_loader}
-    )
-    if res.status_code != 200:
-        raise Exception(f"Error in load+process procedure, got from API: {res.status_code}: {res.reason}")
-    else:
-        print("Document Store data load+process succeeded.")
-
-
-    # WAIT FOR LOADER AND DS to become available (if it doesn't, the lambda will eventually timeout)
-    ld_status = "null"
-    ds_status = "null"
-    print("Waiting for data Chunking and Processing...", end="")
-    while ds_status != "UPSERTED" and ld_status != "SYNC":
-        # GET DOC STORE
-        res = requests.get(
-            f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/store/{fw_docstore}",
-            headers={"Authorization":f"Bearer {fw_api_key}"}
-        )
-        if res.status_code == 200:
-            ds_status = res.json()["status"]
-            ld_status = res.json()["loaders"][0]["status"]
-        time.sleep(1)
-        print(".", end="")
-    print("\nData Chunking and Processing successful")
-
-
-    # UPSERT FROM DOC STORE
+    # UPSERT VECTOR DATA
     print("Upserting vector data...", end="")
     res = requests.post(
-        "https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/vectorstore/insert",
+        f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"storeId":fw_docstore}
+        json={"overrideConfig":{"prefix":f"flowise_doc_store/{rec_id}/contacts_","metadata":{"record_id": rec_id}}}
     )
+
     if res.status_code != 200:
         raise Exception(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
     else:
@@ -222,14 +191,14 @@ def lambda_handler(event, context):
     upload_files_s3(rec_id, doc_id, filename)
     
     # Prepare and insert DynamoDB item
-    #item = {
-    #    'pk': pk,
-    #    'sk': sk,
-    #    'subject': subject, 
-    #    'extractedText': extracted_text
-    #}
-    #insert_item_dynamodb(item)
+    item = {
+        'pk': pk,
+        'sk': sk,
+        'subject': subject, 
+        'extractedText': extracted_text
+    }
+    insert_item_dynamodb(item)
 
     # Interact with Flowise API
-    #fw_api_key = fw_get_api_key()
-    #load_process_upsert(rec_id, fw_api_key)
+    fw_api_key = fw_get_api_key()
+    load_process_upsert(rec_id, fw_api_key)
