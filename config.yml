@@ -33,16 +33,15 @@ compute:
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/default' #'arn:aws:events:us-west-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU'
   sf_event_source: 'aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000C9FGAU'
   lambda_envvars:
-    BASE_URL: 'https://sturla3-dev-ed.develop.my.salesforce.com'
+    BASE_URL_SF: 'https://sturla3-dev-ed.develop.my.salesforce.com'
     BUCKET_NAME: 'sf-fw-poc-files'
-    BUCKET_PATH_EXTXT: 'salesforce_extracted' # text extract
+    BUCKET_PATH_EXTXT: 'salesforce_extracted' # extracted text
     BUCKET_PATH_FW_DS: 'flowise_doc_store'    # flowise document store
     DYNAMODB_TABLE_NAME: 'sf-fw-poc-extxt-table'
     FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
     SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
-    FW_DOCSTORE: 'e24126bd-0936-4dcb-9b44-05a8da71a64d'
-    FW_LOADER: 'd401e9a3-2e92-4d53-95e0-1094a53dff71'
+    FW_CHATFLOW: '5f53ddcf-a8e0-4bd9-a707-0283bf4b0c51'
 
 s3:
   # no values yet

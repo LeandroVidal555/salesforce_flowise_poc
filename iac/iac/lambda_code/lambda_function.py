@@ -16,15 +16,14 @@ s3 = boto3.client('s3')
 
 # Get environment vars
 secret_sf_creds_name = os.getenv("SECRET_SF_CREDS_NAME")
-secret_fw_creds_name = os.getenv("SECRET_FW_CREDS_NAME")
-base_url = os.getenv("BASE_URL")
+base_url_sf = os.getenv("BASE_URL_SF")
 file_download_path = os.getenv("FILE_DOWNLOAD_PATH")
 bucket_name = os.getenv("BUCKET_NAME")
 bucket_path_extxt = os.getenv("BUCKET_PATH_EXTXT")
 bucket_path_fw_ds = os.getenv("BUCKET_PATH_FW_DS")
 dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME")
-fw_docstore = os.getenv("FW_DOCSTORE")
-fw_loader = os.getenv("FW_LOADER")
+secret_fw_creds_name = os.getenv("SECRET_FW_CREDS_NAME")
+fw_chatflow = os.getenv("FW_CHATFLOW")
 
 
 
@@ -38,7 +37,7 @@ def sf_get_token():
     client_secret = json.loads(res["SecretString"])["consumer-secret"]
 
     # Prepare request parameters
-    url_auth = base_url + "/services/oauth2/token"
+    url_auth = base_url_sf + "/services/oauth2/token"
 
     payload_auth = {
         'grant_type': 'client_credentials',
@@ -64,7 +63,7 @@ def sf_get_token():
 
 
 def sf_get_doc_text(doc_id, token):
-    url_download = base_url + f"/{file_download_path}/{doc_id}/content"
+    url_download = base_url_sf + f"/{file_download_path}/{doc_id}/content"
 
     ### Call to Salesforce API
     print("Downloading file...")
@@ -95,7 +94,7 @@ def sf_get_doc_text(doc_id, token):
 
 
 
-def upload_files_s3(filename):
+def upload_files_s3(rec_id, doc_id, filename):
     # Upload the files - text extract
     print("Uploading original PDF file...")
     filename_decoded = urllib.parse.unquote(filename)
@@ -123,7 +122,7 @@ def upload_files_s3(filename):
     if filename_decoded.startswith("contacts_"):
         print("Uploading original PDF file...")
         try:
-            file_path = f"{bucket_path_fw_ds}/{filename_decoded}"
+            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
             s3.upload_file(f"/tmp/download.pdf", bucket_name, file_path)
             print(f"File {file_path} uploaded to {bucket_name}")
         except FileNotFoundError:
@@ -158,7 +157,8 @@ def fw_get_api_key():
 
 
 
-def load_process_upsert(fw_api_key):
+# TODO: INTERACT WITH CHATFLOW VECTOR UPSERT DIRECTLY, OVERRIDE "metadata" AND "prefix"
+def load_process_upsert(rec_id, fw_api_key):
     # PROCESS/CHUNK IN DOC STORE
     print("Chunking and Processing data...", end="")
     res = requests.post(
@@ -172,17 +172,19 @@ def load_process_upsert(fw_api_key):
         print("Document Store data load+process succeeded.")
 
 
-    # WAIT FOR CHUNK PROCESSING
-    l_status = "null"
+    # WAIT FOR LOADER AND DS to become available (if it doesn't, the lambda will eventually timeout)
+    ld_status = "null"
+    ds_status = "null"
     print("Waiting for data Chunking and Processing...", end="")
-    while l_status != "SYNC":
+    while ds_status != "UPSERTED" and ld_status != "SYNC":
         # GET DOC STORE
         res = requests.get(
             f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/document-store/store/{fw_docstore}",
             headers={"Authorization":f"Bearer {fw_api_key}"}
         )
         if res.status_code == 200:
-            l_status = res.json()["loaders"][0]["status"]
+            ds_status = res.json()["status"]
+            ld_status = res.json()["loaders"][0]["status"]
         time.sleep(1)
         print(".", end="")
     print("\nData Chunking and Processing successful")
@@ -205,32 +207,29 @@ def load_process_upsert(fw_api_key):
 
 
 def lambda_handler(event, context):
-    try:
-        print("Received event: " + json.dumps(event, indent=2))
-    except Exception:
-        print('Event processing failed')
-    else:
-        print('Event processing successful')
+    print("Received event: " + json.dumps(event, indent=2))
 
     # Extract information from the event
     pk = event['source']
     sk = event['time']
     subject = event['detail']['payload']['Action__c']
-    doc_id = event['detail']['payload']['Data__c'].split("'")[1]
+    doc_id = event['detail']['payload']['Data__c'].split(",")[0].split("'")[1]
+    rec_id = event['detail']['payload']['Data__c'].split(",")[1].split("'")[1]
 
+    # Get file from SalesForce and insert in S3
     sf_token = sf_get_token()
     filename, extracted_text = sf_get_doc_text(doc_id, sf_token)
-    upload_files_s3(filename)
+    upload_files_s3(rec_id, doc_id, filename)
     
-    # Prepare DynamoDB item
-    item = {
-        'pk': pk,
-        'sk': sk,
-        'subject': subject, 
-        'extractedText': extracted_text
-    }
+    # Prepare and insert DynamoDB item
+    #item = {
+    #    'pk': pk,
+    #    'sk': sk,
+    #    'subject': subject, 
+    #    'extractedText': extracted_text
+    #}
+    #insert_item_dynamodb(item)
 
-    insert_item_dynamodb(item)
-
-    fw_api_key = fw_get_api_key()
-    load_process_upsert(fw_api_key)
+    # Interact with Flowise API
+    #fw_api_key = fw_get_api_key()
+    #load_process_upsert(rec_id, fw_api_key)
