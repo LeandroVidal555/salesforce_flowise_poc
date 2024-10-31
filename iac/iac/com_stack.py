@@ -145,7 +145,7 @@ class ComputeStack(cdk.Stack):
             event_pattern={
                 "source": [cs['sf_event_source']],
                 "detail_type": ["Financial_Event__e"],
-                "detail": { "payload": { "Action__c": ["ImportPDF"] } }
+                "detail": { "payload": { "Action__c": ["ImportFile"] } }
             },
             description="Rule to trigger Lambda on SF event",
             enabled=True
