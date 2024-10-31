@@ -75,13 +75,17 @@ def dl_sf_file(doc_id, token):
     print("Downloading file...")
     res = requests.get(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
 
+    # TODO: terminate if not pdf, txt, docx or xlsx
+
     if res.status_code != 200:
         raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
     
     filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
+    filename_decoded = urllib.parse.unquote(filename)
+    filename_base, filename_ext = os.path.splitext(filename_decoded)
 
     print("Saving file...")
-    with open(f"/tmp/download.pdf", "wb") as file:
+    with open(f"/tmp/download", "wb") as file:
         # Use iter_content to write the file in chunks
         for chunk in res.iter_content(chunk_size=8192):
             if chunk:  # filter out keep-alive new chunks
@@ -92,23 +96,38 @@ def dl_sf_file(doc_id, token):
 
 
 
+# TODO: add support for docx and xlsx files
+def sf_get_doc_text():
+    print("Extracting text...")
+    with fitz_open("/tmp/download") as file:  
+        with open("/tmp/extracted.txt", 'w') as txt_file:
+            for page in file:
+                txt_file.write(page.get_text("text") + '\n')
+    with open("/tmp/extracted.txt", 'r') as txt_file:
+        extracted_text = txt_file.read()
+
+    return extracted_text
+
+
+
+
 def upload_files_s3(rec_id, doc_id, filename):
     filename_decoded = urllib.parse.unquote(filename)
     filename_base, filename_ext = os.path.splitext(filename_decoded)
 
     # Upload the files - text extract
     if extract_text:
-        print("Uploading original PDF file...")
+        print("Uploading original file...")
         try:
-            file_path = f"{bucket_path_extxt}/{filename_base}_original.pdf"
-            s3.upload_file("/tmp/download.pdf", bucket_name, file_path)
+            file_path = f"{bucket_path_extxt}/{filename_base}_original{filename_ext}"
+            s3.upload_file("/tmp/download", bucket_name, file_path)
             print(f"File {file_path} uploaded to {bucket_name}")
         except FileNotFoundError:
             print(f"The file {file_path} was not found")
         except Exception as e:
             print(f"Found error while uploading {file_path}: {e}")
 
-        print("Uploading text file...")
+        print("Uploading extracted text file...")
         try:
             file_path = f"{bucket_path_extxt}/{filename_base}_extracted.txt"
             s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
@@ -119,32 +138,17 @@ def upload_files_s3(rec_id, doc_id, filename):
             print(f"Found error while uploading {file_path}: {e}")
 
     # Upload the files - flowise document store
-    print("Uploading PDF file for upsertion...")
-    if filename_decoded.startswith("contacts_"):
-        try:
-            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
-            s3.upload_file(f"/tmp/download.pdf", bucket_name, file_path)
-            print(f"File {file_path} uploaded to {bucket_name}")
-        except FileNotFoundError:
-            print(f"The file {file_path} was not found")
-        except Exception as e:
-            print(f"Found error while uploading {file_path}: {e}")
-    else:
-        print("ERROR: file does not exist or does not start with 'contacts_'")
-
-
-
-
-def sf_get_doc_text():
-    print("Extracting text...")
-    with fitz_open(f"/tmp/download.pdf") as pdf_file:  
-        with open("/tmp/extracted.txt", 'w') as txt_file:
-            for page in pdf_file:
-                txt_file.write(page.get_text("text") + '\n')
-    with open("/tmp/extracted.txt", 'r') as txt_file:
-        extracted_text = txt_file.read()
-
-    return extracted_text
+    print("Uploading file for upsertion...")
+    if not filename_base.startswith("sffile_"):
+        filename_base = "sffile_" + filename_base
+    try:
+        file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
+        s3.upload_file("/tmp/download", bucket_name, file_path)
+        print(f"File {file_path} uploaded to {bucket_name}")
+    except FileNotFoundError:
+        print(f"The file {file_path} was not found")
+    except Exception as e:
+        print(f"Found error while uploading {file_path}: {e}")
 
 
 
@@ -179,7 +183,7 @@ def load_process_upsert(rec_id, fw_api_key):
     res = requests.post(
         f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"overrideConfig":{"prefix":f"flowise_doc_store/{rec_id}/contacts_","metadata":{"record_id": rec_id}}}
+        json={"overrideConfig":{"prefix":f"flowise_doc_store/{rec_id}/sffile_","metadata":{"record_id": rec_id}}}
     )
 
     if res.status_code != 200:

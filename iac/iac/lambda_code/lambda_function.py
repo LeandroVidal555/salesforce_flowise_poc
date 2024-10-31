@@ -27,11 +27,13 @@ def lambda_handler(event, context):
     # Get file from SalesForce and insert in S3
     sf_token = sf_get_token()
     filename = dl_sf_file(doc_id, sf_token)
+    extracted_text = None
+    if extract_text and filename.endswith(("pdf","txt")): # TODO: add support for docx and xlsx files
+        extracted_text = sf_get_doc_text()
     upload_files_s3(rec_id, doc_id, filename)
     
     # Prepare and insert DynamoDB item
-    if extract_text:
-        extracted_text = sf_get_doc_text(extract_text)
+    if extracted_text:
         item = {
             'pk': pk,
             'sk': sk,
