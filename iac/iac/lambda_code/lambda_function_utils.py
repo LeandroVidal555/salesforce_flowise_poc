@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import requests
 import urllib.parse
 import boto3
@@ -77,7 +78,7 @@ def dl_sf_file(doc_id, token):
     if res.status_code != 200:
         raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
     
-    filename = res.headers["Content-Disposition"].split(";")[1].split('"')[1]
+    filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
 
     print("Saving file...")
     with open(f"/tmp/download.pdf", "wb") as file:
