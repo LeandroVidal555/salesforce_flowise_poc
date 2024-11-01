@@ -141,10 +141,11 @@ class ComputeStack(cdk.Stack):
         # Create the SalesForce EventBridge rule in the existing SalesForce EventBus
         rule = events.Rule(
             self, "SF_EventRule",
+            rule_name=f"{cg['common_prefix']}-{cg['env']}-rule",
             event_bus=existing_event_bus,  # Link the existing EventBus
             event_pattern={
-                "source": [cs['sf_event_source']],
-                "detail_type": ["Financial_Event__e"],
+                "source": [cs['event_bus_arn'].split("event-bus/")[1]],
+                "detail_type": ["Import_Event__e"],
                 "detail": { "payload": { "Action__c": ["ImportFile"] } }
             },
             description="Rule to trigger Lambda on SF event",

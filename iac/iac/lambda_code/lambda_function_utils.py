@@ -75,7 +75,9 @@ def dl_sf_file(doc_id, token):
     print("Downloading file...")
     res = requests.get(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
 
-    # TODO: terminate if not pdf, txt, docx or xlsx
+    # TODO: first make a HEAD call to:
+    # TODO:   terminate if file type not supported by Unstructured: https://docs.unstructured.io/welcome#supported-file-types
+    # TODO:   terminate file too big (10MB?)
 
     if res.status_code != 200:
         raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
@@ -96,7 +98,7 @@ def dl_sf_file(doc_id, token):
 
 
 
-# TODO: add support for docx and xlsx files
+# TODO: add support for the rest of Unstructured file types
 def sf_get_doc_text():
     print("Extracting text...")
     with fitz_open("/tmp/download") as file:  
