@@ -73,19 +73,27 @@ def dl_sf_file(doc_id, token):
 
     ### Call to Salesforce API
     print("Downloading file...")
-    res = requests.get(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
+    res = requests.head(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
+    
+    if res.status_code != 200:
+        raise Exception(f"Failed to get headers for file: {res.status_code} {res.reason}")
 
-    # TODO: first make a HEAD call to:
-    # TODO:   terminate if file type not supported by Unstructured: https://docs.unstructured.io/welcome#supported-file-types
-    # TODO:   terminate file too big (10MB?)
+    filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
+    filename_decoded = urllib.parse.unquote(filename)
+    filename_base, filename_ext = os.path.splitext(filename_decoded)
+    file_size = int(res.headers["Content-Length"])
+
+    if filename_ext not in [".pdf", ".txt"]:
+        raise Exception(f"Unsupported file extension: {filename_ext}")
+
+    if file_size > 10 * 1024 * 1024:
+        raise Exception(f"File exceeded 10MB size imit: {file_size / 1024 / 1024} MB")
+
+    res = requests.get(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
 
     if res.status_code != 200:
         raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
     
-    filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
-    filename_decoded = urllib.parse.unquote(filename)
-    filename_base, filename_ext = os.path.splitext(filename_decoded)
-
     print("Saving file...")
     with open(f"/tmp/download", "wb") as file:
         # Use iter_content to write the file in chunks
