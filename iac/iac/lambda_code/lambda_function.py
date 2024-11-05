@@ -28,7 +28,7 @@ def lambda_handler(event, context):
     sf_token = sf_get_token()
     filename = dl_sf_file(doc_id, sf_token)
     extracted_text = None
-    if extract_text and filename.endswith(("pdf","txt")): # TODO: add support for the rest of Unstructured file types
+    if extract_text and filename.endswith(("pdf","txt", "csv")): # TODO: add support for the rest of Unstructured file types
         extracted_text = sf_get_doc_text()
     upload_files_s3(rec_id, doc_id, filename)
     

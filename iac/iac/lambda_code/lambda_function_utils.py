@@ -83,7 +83,7 @@ def dl_sf_file(doc_id, token):
     filename_base, filename_ext = os.path.splitext(filename_decoded)
     file_size = int(res.headers["Content-Length"])
 
-    if filename_ext not in [".pdf", ".txt"]:
+    if filename_ext not in [".pdf", ".txt", ".csv"]:
         raise Exception(f"Unsupported file extension: {filename_ext}")
 
     if file_size > 10 * 1024 * 1024:

@@ -28,7 +28,7 @@ database:
   database_name: 'epwery'
 
 compute:
-  ec2_machine_type: 't2.micro'
+  ec2_machine_type: 't3a.small' # 't2.micro'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000LkPGAU'
   lambda_envvars:
