@@ -18,6 +18,9 @@ extract_text = os.getenv("EXTRACT_TEXT").lower() == "true" # booleans come as st
 dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME")
 secret_fw_creds_name = os.getenv("SECRET_FW_CREDS_NAME")
 fw_chatflow = os.getenv("FW_CHATFLOW")
+supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
+supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
+supported_formats_all = supported_formats + supported_formats_img
 
 
 # Initialize the SecretsManager client
@@ -83,7 +86,7 @@ def dl_sf_file(doc_id, token):
     filename_base, filename_ext = os.path.splitext(filename_decoded)
     file_size = int(res.headers["Content-Length"])
 
-    if filename_ext not in [".pdf", ".txt", ".csv"]:
+    if filename_ext not in supported_formats:
         raise Exception(f"Unsupported file extension: {filename_ext}")
 
     if file_size > 10 * 1024 * 1024:

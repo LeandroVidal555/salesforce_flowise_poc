@@ -42,6 +42,8 @@ compute:
     SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
     FW_CHATFLOW: '5f53ddcf-a8e0-4bd9-a707-0283bf4b0c51'
+    SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
+    SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
 
 s3:
   # no values yet
