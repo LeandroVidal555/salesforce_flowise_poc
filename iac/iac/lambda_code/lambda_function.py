@@ -1,6 +1,5 @@
 import json
 import os
-#import time
 import re
 from lambda_function_utils import *
 
@@ -37,7 +36,7 @@ def lambda_handler(event, context):
         extracted_text = sf_get_doc_text()
 
     # Upload original file/s to S3  
-    upload_files_s3(rec_id, doc_id, filename)
+    file_path = upload_files_s3(rec_id, doc_id, filename)
     
     # Prepare and insert DynamoDB item
     if extracted_text:
@@ -51,4 +50,4 @@ def lambda_handler(event, context):
 
     # Interact with Flowise API for vector data upsertion
     fw_api_key = fw_get_api_key()
-    load_process_upsert(rec_id, fw_api_key)
+    load_process_upsert(file_path, rec_id, fw_api_key)

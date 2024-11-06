@@ -151,7 +151,7 @@ def upload_files_s3(rec_id, doc_id, filename):
             print(f"Found error while uploading {file_path}: {e}")
 
     # Upload the files - flowise document store
-    print("Uploading file for upsertion...")
+    print("Uploading file for future upsertion...")
     if not filename_base.startswith("sffile_"):
         filename_base = "sffile_" + filename_base
     try:
@@ -162,6 +162,8 @@ def upload_files_s3(rec_id, doc_id, filename):
         print(f"The file {file_path} was not found")
     except Exception as e:
         print(f"Found error while uploading {file_path}: {e}")
+
+    return file_path
 
 
 
@@ -190,13 +192,13 @@ def fw_get_api_key():
 
 
 
-def load_process_upsert(rec_id, fw_api_key):
+def load_process_upsert(file_path, rec_id, fw_api_key):
     # UPSERT VECTOR DATA
-    print("Upserting vector data...", end="")
+    print("Upserting vector data...")
     res = requests.post(
         f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"overrideConfig":{"prefix":f"flowise_doc_store/{rec_id}/sffile_","metadata":{"record_id": rec_id}}}
+        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"record_id": rec_id}}}
     )
 
     if res.status_code != 200:
