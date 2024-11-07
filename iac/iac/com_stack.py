@@ -86,7 +86,10 @@ class ComputeStack(cdk.Stack):
             self, "EC2_Instance",
             instance_name=f"{cg['common_prefix']}-{cg['env']}-flowise",
             instance_type=ec2.InstanceType(cs["ec2_machine_type"]),
-            machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            #machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            machine_image=ec2.MachineImage.generic_linux({
+                cg['region']: cs['ec2_machine_ami']
+            }),
             block_devices=[volume],
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),

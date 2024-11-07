@@ -2,6 +2,8 @@ import json
 import os
 import re
 from lambda_function_utils import *
+from PIL import Image
+import pytesseract
 
 
 # Get environment vars
@@ -30,9 +32,25 @@ def lambda_handler(event, context):
     sf_token = sf_get_token()
     filename = dl_sf_file(doc_id, sf_token)
 
+
+
+    #print("########## TESSERACT TESTING #############")
+    #print("/tmp: " + str(os.listdir("/tmp")))
+    #with open("/tmp/out.txt", 'w') as f:
+    #    txt_file = pytesseract.image_to_string(Image.open("/tmp/download"))
+    #    f.write(txt_file)
+
+    #with open("/tmp/out.txt", "r") as f:
+    #    contents = f.read()
+    #    print(contents)
+    #print("########## TESSERACT TESTING end #############")
+
+
+
+    
     # Extract text if desired by config
     extracted_text = None
-    if extract_text and filename.endswith(tuple(supported_formats)): # TODO: add support for the rest of Unstructured file types
+    if extract_text and filename.endswith(tuple(supported_formats_all)):
         extracted_text = sf_get_doc_text()
 
     # Upload original file/s to S3  

@@ -85,8 +85,11 @@ def dl_sf_file(doc_id, token):
     filename_decoded = urllib.parse.unquote(filename)
     filename_base, filename_ext = os.path.splitext(filename_decoded)
     file_size = int(res.headers["Content-Length"])
+    
+    filetype = res.headers.get("Content-Type") # TESSERACT TESTING
+    print(f"file type: {filetype}") # TESSERACT TESTING
 
-    if filename_ext not in supported_formats:
+    if filename_ext not in supported_formats_all:
         raise Exception(f"Unsupported file extension: {filename_ext}")
 
     if file_size > 10 * 1024 * 1024:
@@ -97,19 +100,22 @@ def dl_sf_file(doc_id, token):
     if res.status_code != 200:
         raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
     
-    print("Saving file...")
+    print(f"Saving file: {filename_decoded} as generic /tmp/download...")
     with open(f"/tmp/download", "wb") as file:
         # Use iter_content to write the file in chunks
+        #i=0 # TESSERACT TESTING
         for chunk in res.iter_content(chunk_size=8192):
             if chunk:  # filter out keep-alive new chunks
+                #i += 1 # TESSERACT TESTING
                 file.write(chunk)
+                #print("{str(i)}: {chunk}") # TESSERACT TESTING
     
+    print("DONE") # TESSERACT TESTING
     return filename
 
 
 
 
-# TODO: add support for the rest of Unstructured file types
 def sf_get_doc_text():
     print("Extracting text...")
     with fitz_open("/tmp/download") as file:  
