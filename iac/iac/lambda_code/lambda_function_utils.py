@@ -4,7 +4,6 @@ import re
 import requests
 import urllib.parse
 import boto3
-from botocore.exceptions import ClientError
 from PIL import Image
 import pytesseract
 
@@ -14,10 +13,7 @@ secret_sf_creds_name = os.getenv("SECRET_SF_CREDS_NAME")
 base_url_sf = os.getenv("BASE_URL_SF")
 file_download_path = os.getenv("FILE_DOWNLOAD_PATH")
 bucket_name = os.getenv("BUCKET_NAME")
-bucket_path_extxt = os.getenv("BUCKET_PATH_EXTXT")
 bucket_path_fw_ds = os.getenv("BUCKET_PATH_FW_DS")
-extract_text = os.getenv("EXTRACT_TEXT").lower() == "true" # booleans come as strings
-dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME")
 secret_fw_creds_name = os.getenv("SECRET_FW_CREDS_NAME")
 fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
@@ -34,13 +30,6 @@ os.environ["TESSDATA_PREFIX"] = "/opt/tessdata"
 sm = boto3.client('secretsmanager')
 # Initialize the S3 client
 s3 = boto3.client('s3')
-
-if extract_text:
-    # Initialize the DynamoDB client
-    dynamodb = boto3.resource('dynamodb')
-    # Import text extraction tool
-    from fitz import open as fitz_open
-
 
 
 
@@ -110,58 +99,17 @@ def dl_sf_file(doc_id, token):
     print(f"Saving file: {filename_decoded} as generic /tmp/download...")
     with open(f"/tmp/download", "wb") as file:
         # Use iter_content to write the file in chunks
-        #i=0 # TESSERACT TESTING
         for chunk in res.iter_content(chunk_size=8192):
             if chunk:  # filter out keep-alive new chunks
-                #i += 1 # TESSERACT TESTING
                 file.write(chunk)
-                #print("{str(i)}: {chunk}") # TESSERACT TESTING
     
-    print("DONE") # TESSERACT TESTING
     return filename
-
-
-
-
-def sf_get_doc_text():
-    print("Extracting text...")
-    with fitz_open("/tmp/download") as file:  
-        with open("/tmp/extracted.txt", 'w') as txt_file:
-            for page in file:
-                txt_file.write(page.get_text("text") + '\n')
-    with open("/tmp/extracted.txt", 'r') as txt_file:
-        extracted_text = txt_file.read()
-
-    return extracted_text
-
 
 
 
 def upload_files_s3(rec_id, doc_id, filename):
     filename_decoded = urllib.parse.unquote(filename)
     filename_base, filename_ext = os.path.splitext(filename_decoded)
-
-    # Upload the files - text extract
-    if extract_text:
-        print("Uploading original file for text extraction...")
-        try:
-            file_path = f"{bucket_path_extxt}/{filename_base}_original{filename_ext}"
-            s3.upload_file("/tmp/download", bucket_name, file_path)
-            print(f"File {file_path} uploaded to {bucket_name}")
-        except FileNotFoundError:
-            print(f"The file {file_path} was not found")
-        except Exception as e:
-            print(f"Found error while uploading {file_path}: {e}")
-
-        print("Uploading extracted text file...")
-        try:
-            file_path = f"{bucket_path_extxt}/{filename_base}_extracted.txt"
-            s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
-            print(f"File {file_path} uploaded to {bucket_name}")
-        except FileNotFoundError:
-            print(f"The file {file_path} was not found")
-        except Exception as e:
-            print(f"Found error while uploading {file_path}: {e}")
 
     # Upload the file - flowise (general)
     print("Uploading original file...")
@@ -196,28 +144,12 @@ def upload_files_s3(rec_id, doc_id, filename):
 
 
 
-
-def insert_item_dynamodb(item):
-    # Put item into DynamoDB
-    table = dynamodb.Table(dynamodb_table_name)
-    
-    print("Inserting item into DynamoDB...")
-    try:
-        table.put_item(Item=item)
-        print('Item successfully inserted.')
-    except ClientError as e:
-        print(f"Failed to insert item: {e.response['Error']['Message']}")
-
-
-
-
 def fw_get_api_key():
     # Get FW api key
     print("Getting SM creds...")
     res = sm.get_secret_value(SecretId=secret_fw_creds_name)
 
     return res["SecretString"]
-
 
 
 
