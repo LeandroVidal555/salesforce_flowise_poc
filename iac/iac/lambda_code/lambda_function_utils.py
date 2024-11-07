@@ -5,6 +5,8 @@ import requests
 import urllib.parse
 import boto3
 from botocore.exceptions import ClientError
+from PIL import Image
+import pytesseract
 
 
 # Get environment vars
@@ -21,6 +23,11 @@ fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
 supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
 supported_formats_all = supported_formats + supported_formats_img
+
+
+# Set Tesseract env
+os.environ["PATH"] += os.pathsep + "/opt/bin"
+os.environ["TESSDATA_PREFIX"] = "/opt/tessdata"
 
 
 # Initialize the SecretsManager client
@@ -136,7 +143,7 @@ def upload_files_s3(rec_id, doc_id, filename):
 
     # Upload the files - text extract
     if extract_text:
-        print("Uploading original file...")
+        print("Uploading original file for text extraction...")
         try:
             file_path = f"{bucket_path_extxt}/{filename_base}_original{filename_ext}"
             s3.upload_file("/tmp/download", bucket_name, file_path)
@@ -156,8 +163,8 @@ def upload_files_s3(rec_id, doc_id, filename):
         except Exception as e:
             print(f"Found error while uploading {file_path}: {e}")
 
-    # Upload the files - flowise document store
-    print("Uploading file for future upsertion...")
+    # Upload the file - flowise (general)
+    print("Uploading original file...")
     if not filename_base.startswith("sffile_"):
         filename_base = "sffile_" + filename_base
     try:
@@ -168,6 +175,22 @@ def upload_files_s3(rec_id, doc_id, filename):
         print(f"The file {file_path} was not found")
     except Exception as e:
         print(f"Found error while uploading {file_path}: {e}")
+
+    # Upload the file - flowise (image extracted text)
+    if filename_ext in supported_formats_img:
+        print("Uploading image file's extracted text for future upsertion...")
+        with open("/tmp/image.txt", 'w') as f:
+            txt_file = pytesseract.image_to_string(Image.open("/tmp/download"))
+            f.write(txt_file)
+        try:
+            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfimg")
+            s3.upload_file("/tmp/image.txt", bucket_name, file_path)
+            print(f"File {file_path} uploaded to {bucket_name}")
+        except FileNotFoundError:
+            print(f"The file {file_path} was not found")
+        except Exception as e:
+            print(f"Found error while uploading {file_path}: {e}")
+
 
     return file_path
 
