@@ -30,4 +30,4 @@ def lambda_handler(event, context):
 
     # Interact with Flowise API for vector data upsertion
     fw_api_key = fw_get_api_key()
-    load_process_upsert(file_path, rec_id, fw_api_key)
+    load_process_upsert(file_path, filename, rec_id, fw_api_key)
