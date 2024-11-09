@@ -84,8 +84,8 @@ def dl_sf_file(doc_id, token):
     filename_base, filename_ext = os.path.splitext(filename_decoded)
     file_size = int(res.headers["Content-Length"])
     
-    filetype = res.headers.get("Content-Type") # TESSERACT TESTING
-    print(f"file type: {filetype}") # TESSERACT TESTING
+    filetype = res.headers.get("Content-Type")
+    print(f"Content-Type: {filetype}")
 
     if filename_ext not in supported_formats_all:
         raise Exception(f"Unsupported file extension: {filename_ext}")
