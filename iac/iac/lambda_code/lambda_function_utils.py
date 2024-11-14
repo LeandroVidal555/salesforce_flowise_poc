@@ -178,7 +178,7 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     res = requests.post(
         f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"record_id": rec_id}}}
+        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": "/".join(file_path.split("/")[1:]), "record_id": rec_id}}}
     )
 
     if res.status_code != 200:

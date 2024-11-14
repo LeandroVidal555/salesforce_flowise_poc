@@ -7,6 +7,8 @@ from aws_cdk import(
     aws_iam as iam,
     aws_lambda as _lambda,
     aws_lambda_python_alpha as _lambda_py,
+    aws_s3 as s3,
+    aws_s3_assets as s3_assets,
     aws_ssm as ssm
 )
 
@@ -129,6 +131,24 @@ class ComputeStack(cdk.Stack):
             memory_size=512,
             timeout=cdk.Duration.seconds(120)
         )
+
+        s3_bucket = s3.Bucket.from_bucket_name(self, "FilesBucket", f"{cg['common_prefix']}-{cg['env']}-files")
+
+        layer_asset = _lambda.LayerVersion(
+            self, "TesseractLayer",
+            code=_lambda.Code.from_bucket(
+                bucket=s3_bucket,
+                key="layers/tesseract-layer.zip"
+            ),
+            compatible_runtimes=[
+                _lambda.Runtime.PYTHON_3_12
+            ],
+            description="Lambda layer with Leptonica and Tesseract binaries",
+            layer_version_name=f"{cg['common_prefix']}-{cg['env']}-tesseract-layer",
+        )
+
+        lambda_fn.add_layers(layer_asset)
+
 
 
         #####################################################
