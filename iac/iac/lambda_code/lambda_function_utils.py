@@ -24,6 +24,7 @@ fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
 supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
 supported_formats_all = supported_formats + supported_formats_img
+secret_pg_creds_name = os.getenv("SECRET_PG_CREDS_NAME")
 db_user = os.getenv("DB_USER")
 
 
@@ -217,7 +218,7 @@ def get_iam_auth_token(region, host, port, user):
 
 
 def pgres_test():
-    db_data = json.loads(sm.get_secret_value(SecretId="sf-fw-poc-pgres-creds")['SecretString'])
+    db_data = json.loads(sm.get_secret_value(SecretId=secret_pg_creds_name)['SecretString'])
     db_region = db_data["host"].split(".")[2]
     print("Generating RDS Pgres token...")
     db_token = get_iam_auth_token(db_region, db_data["host"], db_data["port"], db_user)

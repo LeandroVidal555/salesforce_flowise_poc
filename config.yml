@@ -42,6 +42,7 @@ compute:
     FW_CHATFLOW: '820fd3e0-c63d-40b9-86df-80056b5caa17'
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
+    SECRET_DB_CREDS_NAME: 'sf-fw-poc-pgres-creds'
     DB_USER: 'epwery'
 
 s3:
