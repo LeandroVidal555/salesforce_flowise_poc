@@ -2,12 +2,15 @@ import json
 import os
 import re
 import requests
+import sys
 import urllib.parse
 import boto3
 from PIL import Image
 import pytesseract
 from openpyxl import load_workbook
 import csv
+import psycopg2
+
 
 
 # Get environment vars
@@ -21,6 +24,7 @@ fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
 supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
 supported_formats_all = supported_formats + supported_formats_img
+db_user = os.getenv("DB_USER")
 
 
 # Set Tesseract env
@@ -56,7 +60,8 @@ def sf_get_token():
     res = requests.post(url_auth, headers={"Content-Type":"application/x-www-form-urlencoded"}, data=payload_auth)
 
     if res.status_code != 200:
-        raise Exception(f"Failed to retrieve token: {res.status_code} {res.reason}")
+        print(f"Failed to retrieve token: {res.status_code} {res.reason}")
+        sys.exit(1)
     else:
         print("token retrieval succeeded.")
 
@@ -77,7 +82,8 @@ def dl_sf_file(doc_id, token):
     res = requests.head(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
     
     if res.status_code != 200:
-        raise Exception(f"Failed to get headers for file: {res.status_code} {res.reason}")
+        print(f"Failed to get headers for file: {res.status_code} {res.reason}")
+        sys.exit(1)
 
     filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
     filename_decoded = urllib.parse.unquote(filename)
@@ -88,15 +94,18 @@ def dl_sf_file(doc_id, token):
     print(f"Content-Type: {filetype}")
 
     if filename_ext not in supported_formats_all:
-        raise Exception(f"Unsupported file extension: {filename_ext}")
+        print(f"Unsupported file extension: {filename_ext}")
+        sys.exit(1)
 
     if file_size > 10 * 1024 * 1024:
-        raise Exception(f"File exceeded 10MB size imit: {file_size / 1024 / 1024} MB")
+        print(f"File exceeded 10MB size imit: {file_size / 1024 / 1024} MB")
+        sys.exit(1)
 
     res = requests.get(url_download, headers = {"Content-Type": "application/json", "Authorization":"Bearer " + token})
 
     if res.status_code != 200:
-        raise Exception(f"Failed to download file: {res.status_code} {res.reason}")
+        print(f"Failed to download file: {res.status_code} {res.reason}")
+        sys.exit(1)
     
     print(f"Saving file: {filename_decoded} as generic /tmp/download...")
     with open(f"/tmp/download", "wb") as file:
@@ -154,6 +163,8 @@ def upload_files_s3(rec_id, doc_id, filename):
                 print(f"File {file_path} uploaded to {bucket_name}")
             except Exception as e:
                 print(f"Found error while uploading {file_path}: {e}")
+                sys.exit(1)
+
 
     return file_path
 
@@ -182,6 +193,54 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     )
 
     if res.status_code != 200:
-        raise Exception(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
+        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
+        sys.exit(1)
     else:
         print("Document Store vector data upsertion succeeded.")
+
+
+
+def get_iam_auth_token(region, host, port, user):
+    rds_client = boto3.client("rds", region_name=region)
+    try:
+        token = rds_client.generate_db_auth_token(
+            DBHostname=host,
+            Port=port,
+            DBUsername=user
+        )
+    except Exception as e:
+        print(f"Found error while getting token: {e}")
+        sys.exit(1)
+    
+    return token
+
+
+
+def pgres_test():
+    db_data = json.loads(sm.get_secret_value(SecretId="sf-fw-poc-pgres-creds")['SecretString'])
+    db_region = db_data["host"].split(".")[2]
+    print("Generating RDS Pgres token...")
+    db_token = get_iam_auth_token(db_region, db_data["host"], db_data["port"], db_user)
+
+    # Connect to PostgreSQL database
+    print("Connecting to RDS Pgres database...")
+    try:
+        conn = psycopg2.connect(
+            host=db_data["host"],
+            database=db_data["dbname"],
+            user=db_user,
+            password=db_token,
+            port=db_data["port"],
+            sslmode='require'
+        )
+    except Exception as e:
+        print(f"Found error while connecting: {e}")
+        sys.exit(1)
+    
+    cursor = conn.cursor()
+    
+    print("Executing query...")
+    cursor.execute("SELECT * FROM salesforce_flowise_contacts_rm;")
+    result = cursor.fetchall()
+
+    return result

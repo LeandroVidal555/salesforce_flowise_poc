@@ -46,6 +46,34 @@
                 "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-connected-app-creds-*",
                 "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-fw-api-key-*"
             ]
+        },
+        {
+            "Description": "Secrets Manager",
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": [
+                "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:${COMMON_PREFIX}-${ENV}-pgres-creds-*"
+            ]
+        },
+        {
+            "Description": "PGres DB connection",
+            "Effect": "Allow",
+            "Action": [
+                "rds-db:connect"
+            ],
+            "Resource": [
+                "arn:aws:rds-db:${REGION}:${AWS_ACCOUNT_ID}:dbuser:${PGRES_ID}/epwery"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DeleteNetworkInterface",
+                "ec2:AttachNetworkInterface"
+            ],
+            "Resource": "*"
         }
     ]
 }

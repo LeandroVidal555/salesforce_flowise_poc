@@ -3,3 +3,4 @@ requests
 pillow
 pytesseract
 openpyxl
+psycopg2-binary

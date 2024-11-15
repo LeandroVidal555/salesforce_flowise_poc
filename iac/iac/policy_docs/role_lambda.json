@@ -46,6 +46,34 @@
                 "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-connected-app-creds-*",
                 "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-fw-api-key-*"
             ]
+        },
+        {
+            "Description": "Secrets Manager",
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": [
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-pgres-creds-*"
+            ]
+        },
+        {
+            "Description": "PGres DB connection",
+            "Effect": "Allow",
+            "Action": [
+                "rds-db:connect"
+            ],
+            "Resource": [
+                "arn:aws:rds-db:us-east-1:649999766497:dbuser:db-ENOIXF623NTEPL6DDW7YNF7EDE/epwery"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DeleteNetworkInterface",
+                "ec2:AttachNetworkInterface"
+            ],
+            "Resource": "*"
         }
     ]
 }

@@ -76,5 +76,9 @@
   "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-sg:vpcId=vpc-0684ed7592b1272c1": {
     "securityGroupId": "sg-0e43cdbfa0bb29ce0",
     "allowAllOutbound": false
+  },
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-lambda-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-0f3716ecdf0e92f33",
+    "allowAllOutbound": false
   }
 }
