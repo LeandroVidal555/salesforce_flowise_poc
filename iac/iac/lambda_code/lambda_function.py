@@ -1,15 +1,6 @@
 from lambda_function_utils import *
 import json
-import os
 import re
-
-
-# Get environment vars
-supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
-supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
-supported_formats_all = supported_formats + supported_formats_img
-
-
 
 def lambda_handler(event, context):
     print("Received event: " + json.dumps(event))
@@ -31,8 +22,3 @@ def lambda_handler(event, context):
     # Interact with Flowise API for vector data upsertion
     fw_api_key = fw_get_api_key()
     load_process_upsert(file_path, filename, rec_id, fw_api_key)
-
-    print("Testing pgres access...")
-    result = pgres_test()
-    print("Query output:")
-    print(result)

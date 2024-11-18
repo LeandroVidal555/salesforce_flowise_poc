@@ -29,7 +29,7 @@ database:
 
 compute:
   ec2_machine_type: 't3a.micro'
-  ec2_machine_ami: 'ami-063d43db0594b521b'
+  ec2_machine_ami: 'ami-012967cc5a8c9f891'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000LkPGAU'
   lambda_envvars:
@@ -39,10 +39,10 @@ compute:
     FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
     SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
-    FW_CHATFLOW: '820fd3e0-c63d-40b9-86df-80056b5caa17'
+    FW_CHATFLOW: '8710a349-b78a-4a76-a776-ac98e873879d'
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
-    SECRET_DB_CREDS_NAME: 'sf-fw-poc-pgres-creds'
+    SECRET_PG_CREDS_NAME: 'sf-fw-poc-pgres-creds'
     DB_USER: 'epwery'
 
 s3:

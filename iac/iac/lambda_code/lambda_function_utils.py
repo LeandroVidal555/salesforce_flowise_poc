@@ -180,27 +180,6 @@ def fw_get_api_key():
 
 
 
-def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
-    # UPSERT VECTOR DATA
-    print("Upserting vector data...")
-    if orig_filename.endswith(".xlsx"):
-        # if it's an excel file, use a prefix that will match all the file's sheets
-        file_path = "_".join(file_path.split("_")[:-1]) + "_"
-    
-    res = requests.post(
-        f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
-        headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": "/".join(file_path.split("/")[1:]), "record_id": rec_id}}}
-    )
-
-    if res.status_code != 200:
-        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
-        sys.exit(1)
-    else:
-        print("Document Store vector data upsertion succeeded.")
-
-
-
 def get_iam_auth_token(region, host, port, user):
     rds_client = boto3.client("rds", region_name=region)
     try:
@@ -217,7 +196,7 @@ def get_iam_auth_token(region, host, port, user):
 
 
 
-def pgres_test():
+def pgres_solve_duplicate(file_path):
     db_data = json.loads(sm.get_secret_value(SecretId=secret_pg_creds_name)['SecretString'])
     db_region = db_data["host"].split(".")[2]
     print("Generating RDS Pgres token...")
@@ -240,8 +219,63 @@ def pgres_test():
     
     cursor = conn.cursor()
     
-    print("Executing query...")
-    cursor.execute("SELECT * FROM salesforce_flowise_contacts_rm;")
-    result = cursor.fetchall()
+    print(f"Executing query A to check duplicates for: {file_path}...")
+    try:
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM salesforce_flowise_contacts WHERE metadata->>'source' LIKE %s);",(file_path + "%",))
+        is_duplicate = cursor.fetchone()[0]
+    except Exception as e:
+        print(f"Found error while executing query: {e}")
+        sys.exit(1)
 
-    return result
+    
+    print(f"Executing query B to check skippable for: {file_path}...")
+    try:
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM salesforce_flowise_contacts_rm WHERE group_id LIKE %s);",(file_path + "%",))
+        is_skippable = cursor.fetchone()[0]
+    except Exception as e:
+        print(f"Found error while executing query: {e}")
+        sys.exit(1)
+
+
+    if is_duplicate and not is_skippable:
+        print("Executing deletion query to prevent duplicate...")
+        try:
+            cursor.execute("DELETE FROM salesforce_flowise_contacts WHERE metadata->>'source' LIKE %s;",(file_path + "%",))
+            conn.commit()
+        except Exception as e:
+            print(f"Found error while executing deletion query: {e}")
+            sys.exit(1)
+    else:
+        print("No duplicates found.")
+
+    cursor.close()
+    conn.close()
+
+
+
+def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
+    # UPSERT VECTOR DATA
+    print("Upserting vector data...")
+    if orig_filename.endswith(".xlsx"):
+        # if it's an excel file, use a prefix that will match all the file's sheets
+        file_path = "_".join(file_path.split("_")[:-1]) + "_"
+
+    file_path_source = "/".join(file_path.split("/")[1:])
+    
+    # DUPLICATE CHECK
+    pgres_solve_duplicate(file_path_source)
+    
+    res = requests.post(
+        f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
+        headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
+        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
+    )
+
+    if res.status_code != 200:
+        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
+        sys.exit(1)
+    else:
+        print("Document Store vector data upsertion succeeded.")
+
+
+
