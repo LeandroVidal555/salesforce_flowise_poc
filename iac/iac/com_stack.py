@@ -119,7 +119,7 @@ class ComputeStack(cdk.Stack):
         ##### Lambda Processor Function #####################
         #####################################################
 
-        # this experimental class automatically installs reqs.txt file deps
+        # alpha lambda fn class: installs deps automatically
         lambda_fn = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process",
@@ -137,6 +137,7 @@ class ComputeStack(cdk.Stack):
 
         s3_bucket = s3.Bucket.from_bucket_name(self, "FilesBucket", f"{cg['common_prefix']}-{cg['env']}-files")
 
+        # this layer contains leptonic+tesseract binaries
         layer_asset = _lambda.LayerVersion(
             self, "TesseractLayer",
             code=_lambda.Code.from_bucket(
