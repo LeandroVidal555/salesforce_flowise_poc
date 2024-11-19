@@ -268,7 +268,7 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     
     # UPSERT VECTOR DATA
     cf_distro_domain = ssm.get_parameter(
-        Name=f"{common_prefix}-{env}/pipeline/cf_distro_domain",
+        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain",
     )['Parameter']['Value']
 
     print("Upserting vector data...")
