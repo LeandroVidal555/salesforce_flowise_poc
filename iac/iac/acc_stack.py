@@ -3,8 +3,6 @@ import aws_cdk as cdk
 from aws_cdk import(
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
-    aws_ec2 as ec2,
-    aws_lambda as _lambda,
     aws_ssm as ssm
 )
 
@@ -17,8 +15,6 @@ class AccessStack(cdk.Stack):
         cg = config["global"]
         cs = config["access"]
 
-        vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_name=f"{cg['common_prefix']}-{cg['env']}-vpc")
-
         #sg_alb_ws = ec2.SecurityGroup.from_lookup_by_name(self, "SG_ALB_WS", security_group_name=f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg", vpc=vpc)
 
         ec2_instance_dns = ssm.StringParameter.from_string_parameter_name(
@@ -26,7 +22,6 @@ class AccessStack(cdk.Stack):
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
         ).string_value
 
-        lambda_fn = _lambda.Function.from_function_name(self, "SSMParam_EC2_DNS", f"{cg['common_prefix']}-{cg['env']}-process")
 
         #####################################################
         ##### TAGS ##########################################

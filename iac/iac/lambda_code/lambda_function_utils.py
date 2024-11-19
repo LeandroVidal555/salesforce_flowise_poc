@@ -257,21 +257,21 @@ def pgres_solve_duplicate(file_path):
 
 
 def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
-    # UPSERT VECTOR DATA
-    print("Upserting vector data...")
+    # if it's an excel file, use a prefix that will match all the file's sheets
     if orig_filename.endswith(".xlsx"):
-        # if it's an excel file, use a prefix that will match all the file's sheets
         file_path = "_".join(file_path.split("_")[:-1]) + "_"
 
     file_path_source = "/".join(file_path.split("/")[1:])
     
     # DUPLICATE CHECK
     pgres_solve_duplicate(file_path_source)
-
+    
+    # UPSERT VECTOR DATA
     cf_distro_domain = ssm.get_parameter(
         Name=f"{common_prefix}-{env}/pipeline/cf_distro_domain",
     )['Parameter']['Value']
-    
+
+    print("Upserting vector data...")
     res = requests.post(
         f"https://{cf_distro_domain}/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
