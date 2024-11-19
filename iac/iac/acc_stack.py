@@ -4,6 +4,7 @@ from aws_cdk import(
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
     aws_ec2 as ec2,
+    aws_lambda as _lambda,
     aws_ssm as ssm
 )
 
@@ -24,6 +25,8 @@ class AccessStack(cdk.Stack):
             self, "SSMParam_EC2_DNS",
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
         ).string_value
+
+        lambda_fn = _lambda.Function.from_function_name(self, "SSMParam_EC2_DNS", f"{cg['common_prefix']}-{cg['env']}-process")
 
         #####################################################
         ##### TAGS ##########################################
@@ -135,7 +138,7 @@ class AccessStack(cdk.Stack):
         cache_policy_be = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         cache_policy_ui = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         # CloudFront distribution
-        cloudfront.Distribution(
+        cf_distro = cloudfront.Distribution(
             self, "CF_WS_Distribution",
             default_behavior=cloudfront.BehaviorOptions(
                 origin=ui_origin,
@@ -155,4 +158,10 @@ class AccessStack(cdk.Stack):
                 )
             },
             price_class = cloudfront.PriceClass.PRICE_CLASS_100
+        )
+
+        ssm.StringParameter(
+            self, "SSMParam_CF_DISTRO_DOMAIN",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/cf_distro_domain",
+            string_value=cf_distro.distribution_domain_name
         )

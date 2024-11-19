@@ -8,7 +8,6 @@ from aws_cdk import(
     aws_lambda as _lambda,
     aws_lambda_python_alpha as _lambda_py,
     aws_s3 as s3,
-    aws_s3_assets as s3_assets,
     aws_ssm as ssm
 )
 
@@ -152,7 +151,6 @@ class ComputeStack(cdk.Stack):
         )
 
         lambda_fn.add_layers(layer_asset)
-
 
 
         #####################################################

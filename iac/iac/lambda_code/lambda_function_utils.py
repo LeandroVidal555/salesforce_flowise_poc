@@ -14,6 +14,8 @@ import psycopg2
 
 
 # Get environment vars
+common_prefix = os.getenv("COMMON_PREFIX")
+env = os.getenv("ENV")
 secret_sf_creds_name = os.getenv("SECRET_SF_CREDS_NAME")
 base_url_sf = os.getenv("BASE_URL_SF")
 file_download_path = os.getenv("FILE_DOWNLOAD_PATH")
@@ -37,6 +39,8 @@ os.environ["TESSDATA_PREFIX"] = "/opt/tessdata"
 sm = boto3.client('secretsmanager')
 # Initialize the S3 client
 s3 = boto3.client('s3')
+# Initialize the SSM client
+ssm = boto3.client('ssm')
 
 
 
@@ -71,7 +75,6 @@ def sf_get_token():
     token = res_auth["access_token"]
 
     return token
-
 
 
 
@@ -264,9 +267,13 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     
     # DUPLICATE CHECK
     pgres_solve_duplicate(file_path_source)
+
+    cf_distro_domain = ssm.get_parameter(
+        Name=f"{common_prefix}-{env}/pipeline/cf_distro_domain",
+    )['Parameter']['Value']
     
     res = requests.post(
-        f"https://d2br9m4wtztkg9.cloudfront.net/api/v1/vector/upsert/{fw_chatflow}",
+        f"https://{cf_distro_domain}/api/v1/vector/upsert/{fw_chatflow}",
         headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
         json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
     )
