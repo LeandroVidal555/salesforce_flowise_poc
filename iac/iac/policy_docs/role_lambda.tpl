@@ -74,6 +74,13 @@
                 "ec2:AttachNetworkInterface"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:${REGION}:${AWS_ACCOUNT_ID}:*"
         }
     ]
 }
