@@ -257,6 +257,33 @@ def pgres_solve_duplicate(file_path):
 
 
 def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
+    # First search for the target chatflow using Flowise API
+    cf_distro_domain = ssm.get_parameter(
+        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain",
+    )['Parameter']['Value']
+
+    try:
+        res = requests.get(
+            f"https://{cf_distro_domain}/api/v1/chatflows",
+            headers={"Authorization":f"Bearer {fw_api_key}"}
+        )
+    except Exception as e:
+        print(f"Found error while searching for chatflow: {e}")
+        sys.exit(1)
+    
+
+    if res.status_code != 200:
+        print(f"Error in chatflow search, got from API: {res.status_code}: {res.reason}")
+        sys.exit(1)
+    else:
+        chatflow = next((d for d in res.json() if d["name"] == fw_chatflow), None)
+
+        if chatflow != None:
+            print(f"Found chatflow: {chatflow["id"]}")
+        else:
+            print(f"Could not find chatflow '{fw_chatflow}'")
+            sys.exit(1)
+
     # if it's an excel file, use a prefix that will match all the file's sheets
     if orig_filename.endswith(".xlsx"):
         file_path = "_".join(file_path.split("_")[:-1]) + "_"
@@ -267,16 +294,16 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     pgres_solve_duplicate(file_path_source)
     
     # UPSERT VECTOR DATA
-    cf_distro_domain = ssm.get_parameter(
-        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain",
-    )['Parameter']['Value']
-
     print("Upserting vector data...")
-    res = requests.post(
-        f"https://{cf_distro_domain}/api/v1/vector/upsert/{fw_chatflow}",
-        headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-        json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
-    )
+    try:
+        res = requests.post(
+            f"https://{cf_distro_domain}/api/v1/vector/upsert/{chatflow["id"]}",
+            headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
+            json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
+        )
+    except Exception as e:
+        print(f"Found error while upserting: {e}")
+        sys.exit(1)
 
     if res.status_code != 200:
         print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")

@@ -44,7 +44,7 @@ compute:
     FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
     SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
-    FW_CHATFLOW: '8710a349-b78a-4a76-a776-ac98e873879d'
+    FW_CHATFLOW: 'Salesforce QnA Chatflow'
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
     SECRET_PG_CREDS_NAME: 'sf-fw-poc-pgres-creds'
