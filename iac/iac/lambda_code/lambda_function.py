@@ -3,22 +3,64 @@ import json
 import re
 
 def lambda_handler(event, context):
-    print("Received event: " + json.dumps(event))
+    print("Received event:", json.dumps(event))
+    print("Context:", context) # DEBUG
 
-    # Extract information from the event
-    #   payload data does not come in any standard format, so it needs parsing
-    data_parsed = re.findall(r"(\w+): '([^']*)'", event['detail']['payload']['Data__c'])
-    data_dict = {key: value for key, value in data_parsed}
-    doc_id = data_dict["Id"]
-    rec_id = data_dict["record_id"]
+    if "httpMethod" in event:
+        print("Event came from API.")
 
-    # Get file from SalesForce and insert in S3
-    sf_token = sf_get_token()
-    filename = dl_sf_file(doc_id, sf_token)
+        endpoint = event["path"]
+        print("Requested endpoint:", endpoint)
 
-    # Upload original file/s to S3  
-    file_path = upload_files_s3(rec_id, doc_id, filename)
+        data_dict = json.loads(event['body'])
+        print("Request body:", data_dict)
 
-    # Interact with Flowise API for vector data upsertion
-    fw_api_key = fw_get_api_key()
-    load_process_upsert(file_path, filename, rec_id, fw_api_key)
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "message": "Success.",
+                "data": data_dict
+            })
+        }
+    
+    elif "source" in event:
+        print("Event came from SalesForce.")
+        # Extract information from the event
+        #   payload data does not come in any standard format, so it needs parsing
+        action = event['detail']['payload']['Action__c']
+        data_parsed = re.findall(r"(\w+): '([^']*)'", event['detail']['payload']['Data__c'])
+        data_dict = {key: value for key, value in data_parsed}
+
+        if action == "ImportFile":
+            print(f"{action} action in SF. Initiating download, parse and insert process...")
+            doc_id = data_dict["Id"]
+            rec_id = data_dict["record_id"]
+
+            # Get file from SalesForce and insert in S3
+            sf_token = sf_get_token()
+            filename = dl_sf_file(doc_id, sf_token)
+
+            # Upload original file/s to S3  
+            file_path = upload_files_s3(rec_id, doc_id, filename)
+
+            # Interact with Flowise API for vector data upsertion
+            fw_api_key = fw_get_api_key()
+            load_process_upsert(file_path, filename, rec_id, fw_api_key)
+
+        elif action == "ImportText":
+            print(f"{action} action in SF. Initiating parse and insert process...")
+
+        else:
+            print(f"Action type unrecognized: {action}")
+            sys.exit(1)
+    
+    else:
+        print("Event source unrecognized.")
+
+        return {
+            "statusCode": 400,
+            "body": json.dumps({
+                "error": "Unprocessable Entity",
+                "message": "Event source unrecognized."
+            })
+        }
