@@ -1,8 +1,10 @@
 import aws_cdk as cdk
 
 from aws_cdk import(
+    aws_apigateway as apigw,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
+    aws_lambda as _lambda,
     aws_ssm as ssm
 )
 
@@ -21,6 +23,11 @@ class AccessStack(cdk.Stack):
             self, "SSMParam_EC2_DNS",
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
         ).string_value
+
+        lambda_fn = _lambda.Function.from_function_name(
+            self, "Lambda_Process_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-process"
+        )
 
 
         #####################################################
@@ -98,6 +105,7 @@ class AccessStack(cdk.Stack):
             )
         )
         """
+
         
         #####################################################
         ##### CLOUDFRONT - EC2 Webservice ###################
@@ -159,4 +167,33 @@ class AccessStack(cdk.Stack):
             self, "SSMParam_CF_DISTRO_DOMAIN",
             parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/cf_distro_domain",
             string_value=cf_distro.distribution_domain_name
+        )
+
+        
+        #####################################################
+        ##### API GATEWAY - Non-SF API ######################
+        #####################################################
+
+        # Define API Gateway REST API
+        api_lambda = apigw.LambdaRestApi(
+            self, "APIGW_API_LAMBDA",
+            rest_api_name=f"/{cg['common_prefix']}-{cg['env']}-api-lambda",
+            handler=lambda_fn,
+            cloud_watch_role = True,
+            proxy = False,
+            deploy_options = apigw.StageOptions(
+                stage_name = "api",
+                logging_level = apigw.MethodLoggingLevel.INFO,
+                data_trace_enabled = True,
+                metrics_enabled = True,
+                tracing_enabled = True
+            )
+        )
+        
+        api_ep = api_lambda.root.add_resource("v1").add_resource("event")
+        api_ep.add_method("POST") # POST /api/v1/event
+
+        api_lambda.add_api_key(
+            "APIGW_API_LAMBDA_KEY",
+            api_key_name=f"/{cg['common_prefix']}-{cg['env']}-api-lambda-key"
         )
