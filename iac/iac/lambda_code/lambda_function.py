@@ -4,7 +4,6 @@ import re
 
 def lambda_handler(event, context):
     print("Received event:", json.dumps(event))
-    print("Context:", context) # DEBUG
 
     if "httpMethod" in event:
         print("Event came from API.")
