@@ -163,10 +163,10 @@ class ComputeStack(cdk.Stack):
             event_bus_arn=cs['event_bus_arn']
         )
 
-        # Create the SalesForce EventBridge rule in the existing SalesForce EventBus
-        rule = events.Rule(
-            self, "SF_EventRule",
-            rule_name=f"{cg['common_prefix']}-{cg['env']}-rule",
+        # Create SalesForce EventBridge rule in the existing SalesForce EventBus for ImportFile event
+        rule_file = events.Rule(
+            self, "SF_EventRule_File",
+            rule_name=f"{cg['common_prefix']}-{cg['env']}-importfile-rule",
             event_bus=existing_event_bus,  # Link the existing EventBus
             event_pattern={
                 "source": [cs['event_bus_arn'].split("event-bus/")[1]],
@@ -178,4 +178,21 @@ class ComputeStack(cdk.Stack):
         )
 
         # Add the Lambda Processor Function as a target of the rule
-        rule.add_target(events_targets.LambdaFunction(lambda_fn))
+        rule_file.add_target(events_targets.LambdaFunction(lambda_fn))
+
+        # Create SalesForce EventBridge rule in the existing SalesForce EventBus for ImportText event
+        rule_text = events.Rule(
+            self, "SF_EventRule_Text",
+            rule_name=f"{cg['common_prefix']}-{cg['env']}-importtext-rule",
+            event_bus=existing_event_bus,  # Link the existing EventBus
+            event_pattern={
+                "source": [cs['event_bus_arn'].split("event-bus/")[1]],
+                "detail_type": ["Import_Event__e"],
+                "detail": { "payload": { "Action__c": ["ImportText"] } }
+            },
+            description="Rule to trigger Lambda on SF event",
+            enabled=True
+        )
+
+        # Add the Lambda Processor Function as a target of the rule
+        rule_text.add_target(events_targets.LambdaFunction(lambda_fn))

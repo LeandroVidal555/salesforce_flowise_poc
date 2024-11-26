@@ -1,6 +1,7 @@
 from lambda_function_utils import *
 import json
 import re
+import time
 
 def lambda_handler(event, context):
     print("Received event:", json.dumps(event))
@@ -48,6 +49,21 @@ def lambda_handler(event, context):
 
         elif action == "ImportText":
             print(f"{action} action in SF. Initiating parse and insert process...")
+            text = data_dict["text"]
+            rec_id = data_dict["record_id"]
+
+            # Create text file
+            create_text_file(text)
+
+            # Upload file to S3
+            epoch_ms = int(time.time() * 1000)
+            filename = f"sftxt_{epoch_ms}.txt"
+            file_path = upload_files_s3(rec_id, filename)
+
+            # Interact with Flowise API for vector data upsertion
+            fw_api_key = fw_get_api_key()
+            load_process_upsert(file_path, filename, rec_id, fw_api_key)
+
 
         else:
             print(f"Action type unrecognized: {action}")
