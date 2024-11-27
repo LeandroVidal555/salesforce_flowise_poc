@@ -1,10 +1,9 @@
 from lambda_function_utils import *
 import json
-import re
 import time
 
 def lambda_handler(event, context):
-    print("Received event:", json.dumps(event))
+    print("##### RECEIVED EVENT:", json.dumps(event))
 
     if "httpMethod" in event:
         print("Event came from API.")
@@ -28,8 +27,7 @@ def lambda_handler(event, context):
         # Extract information from the event
         #   payload data does not come in any standard format, so it needs parsing
         action = event['detail']['payload']['Action__c']
-        data_parsed = re.findall(r"(\w+): '([^']*)'", event['detail']['payload']['Data__c'])
-        data_dict = {key: value for key, value in data_parsed}
+        data_dict = json.loads(event['detail']['payload']['Data__c'])
 
         if action == "ImportFile":
             print(f"{action} action in SF. Initiating download, parse and insert process...")
@@ -41,7 +39,7 @@ def lambda_handler(event, context):
             filename = dl_sf_file(doc_id, sf_token)
 
             # Upload original file/s to S3  
-            file_path = upload_files_s3(rec_id, doc_id, filename)
+            file_path = upload_files_s3(rec_id, filename, doc_id)
 
             # Interact with Flowise API for vector data upsertion
             fw_api_key = fw_get_api_key()
@@ -49,7 +47,7 @@ def lambda_handler(event, context):
 
         elif action == "ImportText":
             print(f"{action} action in SF. Initiating parse and insert process...")
-            text = data_dict["text"]
+            text = json.dumps(data_dict["text"])
             rec_id = data_dict["record_id"]
 
             # Create text file

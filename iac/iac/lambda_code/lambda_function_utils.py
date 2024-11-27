@@ -90,12 +90,13 @@ def dl_sf_file(doc_id, token):
         sys.exit(1)
 
     filename = re.search(r'filename="(.+)"', res.headers["Content-Disposition"]).group(1)
+
     filename_decoded = urllib.parse.unquote(filename)
     filename_base, filename_ext = os.path.splitext(filename_decoded)
     file_size = int(res.headers["Content-Length"])
     
-    filetype = res.headers.get("Content-Type")
-    print(f"Content-Type: {filetype}")
+    #filetype = res.headers.get("Content-Type")
+    #print(f"Content-Type: {filetype}")
 
     if filename_ext not in supported_formats_all:
         print(f"Unsupported file extension: {filename_ext}")
@@ -304,12 +305,13 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
 
     # if it's an excel file, use a prefix that will match all the file's sheets
     if orig_filename.endswith(".xlsx"):
-        file_path = "_".join(file_path.split("_")[:-1]) + "_"
-
-    file_path_source = "/".join(file_path.split("/")[1:])
+        file_path = "_".join(file_path.split("_")[:-1])
+        file_path_source = file_path + ".xlsx"
+    else:
+        file_path_source = "/".join(file_path.split("/")[1:])
     
     # DUPLICATE CHECK
-    pgres_solve_duplicate(file_path_source)
+    #pgres_solve_duplicate(file_path_source)
     
     # UPSERT VECTOR DATA
     print("Upserting vector data...")
@@ -328,6 +330,7 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
         sys.exit(1)
     else:
         print("Document Store vector data upsertion succeeded.")
+        print(res.json())
 
 
 
