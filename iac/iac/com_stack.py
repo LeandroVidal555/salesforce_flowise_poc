@@ -13,23 +13,6 @@ from aws_cdk import(
 
 import boto3
 
-def get_ssm_parameters_by_path(path):
-    """HS legacy: used to download all parameters for the lambda functions"""
-    ssm_client = boto3.client('ssm')
-    parameters = []
-    next_token = None
-    while True:
-        if next_token:
-            response = ssm_client.get_parameters_by_path(Path=path, Recursive=True, NextToken=next_token)
-        else:
-            response = ssm_client.get_parameters_by_path(Path=path, Recursive=True)
-        parameters.extend(response['Parameters'])
-        next_token = response.get('NextToken')
-        if not next_token:
-            break
-    return parameters
-
-
 
 def iac_output(value):
     """logging solution: write the output to an ssm parameter"""
@@ -55,7 +38,7 @@ class ComputeStack(cdk.Stack):
         role_ec2 = iam.Role.from_role_name(self, "Role_EC2", role_name=f"{cg['common_prefix']}-{cg['env']}-ec2-role")
         role_lambda = iam.Role.from_role_name(self, "Role_lambda", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-role")
         sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
-        sg_lambda = ec2.SecurityGroup.from_lookup_by_name(self, "SG_LAMBDA", security_group_name=f"{cg['common_prefix']}-{cg['env']}-lambda-sg", vpc=vpc)
+        #sg_lambda = ec2.SecurityGroup.from_lookup_by_name(self, "SG_LAMBDA", security_group_name=f"{cg['common_prefix']}-{cg['env']}-lambda-sg", vpc=vpc)
 
 
         #####################################################
