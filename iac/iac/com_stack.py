@@ -38,7 +38,6 @@ class ComputeStack(cdk.Stack):
         role_ec2 = iam.Role.from_role_name(self, "Role_EC2", role_name=f"{cg['common_prefix']}-{cg['env']}-ec2-role")
         role_lambda = iam.Role.from_role_name(self, "Role_lambda", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-role")
         sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
-        #sg_lambda = ec2.SecurityGroup.from_lookup_by_name(self, "SG_LAMBDA", security_group_name=f"{cg['common_prefix']}-{cg['env']}-lambda-sg", vpc=vpc)
 
 
         #####################################################
@@ -112,9 +111,7 @@ class ComputeStack(cdk.Stack):
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda,
             memory_size=512,
-            timeout=cdk.Duration.seconds(120),
-            #vpc=vpc,
-            #security_groups=[sg_lambda]
+            timeout=cdk.Duration.seconds(120)
         )
 
         s3_bucket = s3.Bucket.from_bucket_name(self, "FilesBucket", f"{cg['common_prefix']}-{cg['env']}-files")

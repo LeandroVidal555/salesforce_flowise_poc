@@ -114,18 +114,10 @@ class SecurityStack(cdk.Stack):
             connection=ec2.Port.tcp(3000),
             description="Allow traffic from CF - UI"
         )
-
-        # Create a security group for the Lambda function
-        sg_lambda = ec2.SecurityGroup(
-            self, "SG_LAMBDA",
-            security_group_name = f"{cg['common_prefix']}-{cg['env']}-lambda-sg",
-            vpc = vpc,
-            description = "SG for Lambda function"
-        )
+        
 
         # Add rules to allow access to RDS from the EC2 instance
         sg_postgres.add_ingress_rule(peer=sg_ec2, connection=ec2.Port.tcp(cs["pgres_port"]))
-        sg_postgres.add_ingress_rule(peer=sg_lambda, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip1, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip2, connection=ec2.Port.tcp(cs["pgres_port"]))
 

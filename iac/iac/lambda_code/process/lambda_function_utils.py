@@ -9,7 +9,6 @@ from PIL import Image
 import pytesseract
 from openpyxl import load_workbook
 import csv
-import psycopg2
 
 
 
@@ -26,8 +25,6 @@ fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
 supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
 supported_formats_all = supported_formats + supported_formats_img
-secret_pg_creds_name = os.getenv("SECRET_PG_CREDS_NAME")
-db_user = os.getenv("DB_USER")
 
 
 # Set Tesseract env
@@ -215,63 +212,6 @@ def get_iam_auth_token(region, host, port, user):
         sys.exit(1)
     
     return token
-
-
-
-def pgres_solve_duplicate(file_path):
-    db_data = json.loads(sm.get_secret_value(SecretId=secret_pg_creds_name)['SecretString'])
-    db_region = db_data["host"].split(".")[2]
-    print("Generating RDS Pgres token...")
-    db_token = get_iam_auth_token(db_region, db_data["host"], db_data["port"], db_user)
-
-    # Connect to PostgreSQL database
-    print("Connecting to RDS Pgres database...")
-    try:
-        conn = psycopg2.connect(
-            host=db_data["host"],
-            database=db_data["dbname"],
-            user=db_user,
-            password=db_token,
-            port=db_data["port"],
-            sslmode='require'
-        )
-    except Exception as e:
-        print(f"Found error while connecting: {e}")
-        sys.exit(1)
-    
-    cursor = conn.cursor()
-    
-    print(f"Executing query A to check duplicates for: {file_path}...")
-    try:
-        cursor.execute("SELECT EXISTS (SELECT 1 FROM salesforce_flowise_contacts WHERE metadata->>'source' LIKE %s);",(file_path + "%",))
-        is_duplicate = cursor.fetchone()[0]
-    except Exception as e:
-        print(f"Found error while executing query: {e}")
-        sys.exit(1)
-
-    
-    print(f"Executing query B to check skippable for: {file_path}...")
-    try:
-        cursor.execute("SELECT EXISTS (SELECT 1 FROM salesforce_flowise_contacts_rm WHERE group_id LIKE %s);",(file_path + "%",))
-        is_skippable = cursor.fetchone()[0]
-    except Exception as e:
-        print(f"Found error while executing query: {e}")
-        sys.exit(1)
-
-
-    if is_duplicate and not is_skippable:
-        print("Executing deletion query to prevent duplicate...")
-        try:
-            cursor.execute("DELETE FROM salesforce_flowise_contacts WHERE metadata->>'source' LIKE %s;",(file_path + "%",))
-            conn.commit()
-        except Exception as e:
-            print(f"Found error while executing deletion query: {e}")
-            sys.exit(1)
-    else:
-        print("No duplicates found.")
-
-    cursor.close()
-    conn.close()
 
 
 
