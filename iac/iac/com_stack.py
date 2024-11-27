@@ -36,7 +36,8 @@ class ComputeStack(cdk.Stack):
 
         vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_name=f"{cg['common_prefix']}-{cg['env']}-vpc")
         role_ec2 = iam.Role.from_role_name(self, "Role_EC2", role_name=f"{cg['common_prefix']}-{cg['env']}-ec2-role")
-        role_lambda = iam.Role.from_role_name(self, "Role_lambda", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-role")
+        role_lambda_process = iam.Role.from_role_name(self, "Role_Lambda_Process", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-process-role")
+        role_lambda_graph = iam.Role.from_role_name(self, "Role_Lambda_Graph", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-graph-role")
         sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
 
 
@@ -101,7 +102,7 @@ class ComputeStack(cdk.Stack):
         #####################################################
 
         # alpha lambda fn class: installs deps automatically
-        lambda_fn_proc = _lambda_py.PythonFunction(
+        lambda_fn_process = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process",
             entry="iac/lambda_code/process",
@@ -109,7 +110,7 @@ class ComputeStack(cdk.Stack):
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            role=role_lambda,
+            role=role_lambda_process,
             memory_size=512,
             timeout=cdk.Duration.seconds(120)
         )
@@ -130,7 +131,7 @@ class ComputeStack(cdk.Stack):
             layer_version_name=f"{cg['common_prefix']}-{cg['env']}-tesseract-layer",
         )
 
-        lambda_fn_proc.add_layers(layer_asset)
+        lambda_fn_process.add_layers(layer_asset)
 
 
         #####################################################
@@ -146,7 +147,7 @@ class ComputeStack(cdk.Stack):
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            role=role_lambda,
+            role=role_lambda_graph,
             timeout=cdk.Duration.seconds(15)
         )
 
@@ -176,7 +177,7 @@ class ComputeStack(cdk.Stack):
         )
 
         # Add the Lambda Processor Function as a target of the rule
-        rule_file.add_target(events_targets.LambdaFunction(lambda_fn_proc))
+        rule_file.add_target(events_targets.LambdaFunction(lambda_fn_process))
 
         # Create SalesForce EventBridge rule in the existing SalesForce EventBus for ImportText event
         rule_text = events.Rule(
@@ -193,4 +194,4 @@ class ComputeStack(cdk.Stack):
         )
 
         # Add the Lambda Processor Function as a target of the rule
-        rule_text.add_target(events_targets.LambdaFunction(lambda_fn_proc))
+        rule_text.add_target(events_targets.LambdaFunction(lambda_fn_process))

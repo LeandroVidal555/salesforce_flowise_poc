@@ -24,9 +24,14 @@ class AccessStack(cdk.Stack):
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
         ).string_value
 
-        lambda_fn = _lambda.Function.from_function_name(
+        lambda_fn_process = _lambda.Function.from_function_name(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process"
+        )
+
+        lambda_fn_graph = _lambda.Function.from_function_name(
+            self, "Lambda_Graph_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-graph"
         )
 
 
@@ -171,14 +176,16 @@ class AccessStack(cdk.Stack):
 
         
         #####################################################
-        ##### API GATEWAY - Non-SF API ######################
+        ##### API GATEWAY - API #############################
         #####################################################
+
+        ### Processor Lambda Non-SF
 
         # Define API Gateway REST API
         api_lambda = apigw.LambdaRestApi(
-            self, "APIGW_API_LAMBDA",
-            rest_api_name=f"/{cg['common_prefix']}-{cg['env']}-api-lambda",
-            handler=lambda_fn,
+            self, "APIGW_API_LAMBDA_PROCESS",
+            rest_api_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-process-api",
+            handler=lambda_fn_process,
             cloud_watch_role = True,
             proxy = False,
             deploy_options = apigw.StageOptions(
@@ -194,6 +201,6 @@ class AccessStack(cdk.Stack):
         api_ep.add_method("POST") # POST /api/v1/event
 
         api_lambda.add_api_key(
-            "APIGW_API_LAMBDA_KEY",
-            api_key_name=f"/{cg['common_prefix']}-{cg['env']}-api-lambda-key"
+            "APIGW_API_LAMBDA_PROCESS_KEY",
+            api_key_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-process-api-key"
         )

@@ -126,11 +126,20 @@ class SecurityStack(cdk.Stack):
         ##### Lambda ########################################
         #####################################################
 
-        # Create an IAM Role for the EC2 instance
-        role_lambda = iam.Role(
-            self, "Role_Lambda",
-            role_name = f"{cg['common_prefix']}-{cg['env']}-lambda-role",
+        # Create an IAM Role for the Lambda Processor function
+        role_lambda_process = iam.Role(
+            self, "Role_Lambda_Process",
+            role_name = f"{cg['common_prefix']}-{cg['env']}-lambda-process-role",
             assumed_by = iam.ServicePrincipal("lambda.amazonaws.com"),
             description="Role for the Lambda Processor function"
         )
-        attach_policy_doc(self, "role_lambda", role_lambda)
+        attach_policy_doc(self, "role_lambda_process", role_lambda_process)
+
+        # Create an IAM Role for the Lambda Graphs function
+        role_lambda_graph = iam.Role(
+            self, "Role_Lambda_Graph",
+            role_name = f"{cg['common_prefix']}-{cg['env']}-lambda-graph-role",
+            assumed_by = iam.ServicePrincipal("lambda.amazonaws.com"),
+            description="Role for the Lambda Graph function"
+        )
+        attach_policy_doc(self, "role_lambda_graph", role_lambda_graph)
