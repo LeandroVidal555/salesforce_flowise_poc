@@ -35,7 +35,7 @@ compute:
   ec2_machine_ami: 'ami-012967cc5a8c9f891'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000LkPGAU'
-  lambda_envvars:
+  lambda_envvars_process:
     COMMON_PREFIX: 'sf-fw'
     ENV: 'poc'
     BASE_URL_SF: 'https://sturla3-dev-ed.develop.my.salesforce.com'
@@ -49,6 +49,8 @@ compute:
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
     SECRET_PG_CREDS_NAME: 'sf-fw-poc-pgres-creds'
     DB_USER: 'epwery'
+  lambda_envvars_graph:
+    API_EP: ''
 
 access:
   pgres_port: 5432

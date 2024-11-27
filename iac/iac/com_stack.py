@@ -119,19 +119,19 @@ class ComputeStack(cdk.Stack):
         #####################################################
 
         # alpha lambda fn class: installs deps automatically
-        lambda_fn = _lambda_py.PythonFunction(
+        lambda_fn_proc = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process",
-            entry="iac/lambda_code",
-            environment=cs['lambda_envvars'],
+            entry="iac/lambda_code/process",
+            environment=cs['lambda_envvars_process'],
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda,
             memory_size=512,
             timeout=cdk.Duration.seconds(120),
-            vpc=vpc,
-            security_groups=[sg_lambda]
+            #vpc=vpc,
+            #security_groups=[sg_lambda]
         )
 
         s3_bucket = s3.Bucket.from_bucket_name(self, "FilesBucket", f"{cg['common_prefix']}-{cg['env']}-files")
@@ -150,7 +150,25 @@ class ComputeStack(cdk.Stack):
             layer_version_name=f"{cg['common_prefix']}-{cg['env']}-tesseract-layer",
         )
 
-        lambda_fn.add_layers(layer_asset)
+        lambda_fn_proc.add_layers(layer_asset)
+
+
+        #####################################################
+        ##### Lambda Graph Function #########################
+        #####################################################
+
+        # alpha lambda fn class: installs deps automatically
+        _lambda_py.PythonFunction(
+            self, "Lambda_Graph_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-graph",
+            entry="iac/lambda_code/graph",
+            environment=cs['lambda_envvars_graph'],
+            index="lambda_function.py", 
+            handler="lambda_handler",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            role=role_lambda,
+            timeout=cdk.Duration.seconds(15)
+        )
 
 
         #####################################################
@@ -178,7 +196,7 @@ class ComputeStack(cdk.Stack):
         )
 
         # Add the Lambda Processor Function as a target of the rule
-        rule_file.add_target(events_targets.LambdaFunction(lambda_fn))
+        rule_file.add_target(events_targets.LambdaFunction(lambda_fn_proc))
 
         # Create SalesForce EventBridge rule in the existing SalesForce EventBus for ImportText event
         rule_text = events.Rule(
@@ -195,4 +213,4 @@ class ComputeStack(cdk.Stack):
         )
 
         # Add the Lambda Processor Function as a target of the rule
-        rule_text.add_target(events_targets.LambdaFunction(lambda_fn))
+        rule_text.add_target(events_targets.LambdaFunction(lambda_fn_proc))
