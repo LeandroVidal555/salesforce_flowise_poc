@@ -28,11 +28,11 @@ def lambda_handler(event, context):
         #   payload data does not come in any standard format, so it needs parsing
         action = event['detail']['payload']['Action__c']
         data_dict = json.loads(event['detail']['payload']['Data__c'])
+        rec_id = data_dict["record_id"]
 
         if action == "ImportFile":
             print(f"{action} action in SF. Initiating download, parse and insert process...")
             doc_id = data_dict["Id"]
-            rec_id = data_dict["record_id"]
 
             # Get file from SalesForce and insert in S3
             sf_token = sf_get_token()
@@ -44,7 +44,6 @@ def lambda_handler(event, context):
         elif action == "ImportText":
             print(f"{action} action in SF. Initiating parse and insert process...")
             text = json.dumps(data_dict["text"])
-            rec_id = data_dict["record_id"]
 
             # Create text file
             create_text_file(text)
