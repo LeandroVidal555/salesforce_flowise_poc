@@ -5,8 +5,8 @@ import time
 def lambda_handler(event, context):
     print("##### RECEIVED EVENT:", json.dumps(event))
 
-    if "httpMethod" in event:
-        print("Event came from API.")
+    if "path" in event:
+        print("Event came from API GW.")
 
         endpoint = event["path"]
         print("Requested endpoint:", endpoint)

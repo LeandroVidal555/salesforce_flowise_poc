@@ -4,6 +4,7 @@ from aws_cdk import(
     aws_apigateway as apigw,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
+    aws_iam as iam,
     aws_lambda as _lambda,
     aws_ssm as ssm
 )
@@ -179,8 +180,7 @@ class AccessStack(cdk.Stack):
         ##### API GATEWAY - API #############################
         #####################################################
 
-        ### Processor Lambda Non-SF
-
+        """
         # Define API Gateway REST API
         api_lambda = apigw.LambdaRestApi(
             self, "APIGW_API_LAMBDA_PROCESS",
@@ -204,3 +204,60 @@ class AccessStack(cdk.Stack):
             "APIGW_API_LAMBDA_PROCESS_KEY",
             api_key_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-process-api-key"
         )
+        """
+
+        ### Base API for all lambdas
+        api_lambda = apigw.RestApi(
+            self, "APIGW_API_LAMBDA",
+            rest_api_name = f"/{cg['common_prefix']}-{cg['env']}-lambda-api",
+            cloud_watch_role = True,
+            deploy_options = apigw.StageOptions(
+                stage_name = "api",
+                logging_level = apigw.MethodLoggingLevel.INFO,
+                data_trace_enabled = True,
+                metrics_enabled = True,
+                tracing_enabled = True
+            )
+        )
+
+        api_key = api_lambda.add_api_key(
+            "APIGW_API_LAMBDA_KEY",
+            api_key_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-api-key"
+        )
+
+        usage_plan = api_lambda.add_usage_plan(
+            "APIGW_LAMBDA_UsagePlan",
+            name=f"/{cg['common_prefix']}-{cg['env']}-lambda-usage-plan"
+        )
+
+        usage_plan.add_api_key(api_key)
+
+        usage_plan.add_api_stage(
+            stage=api_lambda.deployment_stage
+        )
+
+        api_version = api_lambda.root.add_resource("v1")
+
+
+        # Processor Lambda (Non-SF API)
+        api_ep = api_version.add_resource(
+            "event_import",
+            default_method_options=apigw.MethodOptions(api_key_required=True)
+        )
+
+        integration_process = apigw.LambdaIntegration(lambda_fn_process, proxy=True)
+        api_ep.add_method(
+            "POST",
+            integration_process,
+            request_parameters={"method.request.path.proxy": True}
+        )
+
+        lambda_fn_process.add_permission(
+            "API_GW_InvokeProcessorLambda",
+            principal = iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action = "lambda:InvokeFunction",
+            source_arn = f"arn:aws:apigateway:{cg['region']}::/restapis/{api_lambda.rest_api_id}"
+        )
+
+
+        # Graph Lambda
