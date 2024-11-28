@@ -41,10 +41,6 @@ def lambda_handler(event, context):
             # Upload original file/s to S3  
             file_path = upload_files_s3(rec_id, filename, doc_id)
 
-            # Interact with Flowise API for vector data upsertion
-            fw_api_key = fw_get_api_key()
-            load_process_upsert(file_path, filename, rec_id, fw_api_key)
-
         elif action == "ImportText":
             print(f"{action} action in SF. Initiating parse and insert process...")
             text = json.dumps(data_dict["text"])
@@ -58,14 +54,13 @@ def lambda_handler(event, context):
             filename = f"sftxt_{epoch_ms}.txt"
             file_path = upload_files_s3(rec_id, filename)
 
-            # Interact with Flowise API for vector data upsertion
-            fw_api_key = fw_get_api_key()
-            load_process_upsert(file_path, filename, rec_id, fw_api_key)
-
-
         else:
             print(f"Action type unrecognized: {action}")
             sys.exit(1)
+
+        # Interact with Flowise API for vector data upsertion
+        fw_api_key = fw_get_api_key()
+        load_process_upsert(file_path, filename, rec_id, fw_api_key)
     
     else:
         print("Event source unrecognized.")
