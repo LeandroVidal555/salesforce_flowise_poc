@@ -17,6 +17,32 @@
             "Resource": [
                 "arn:aws:logs:us-east-1:649999766497:log-group:/aws/lambda/sf-fw-poc-graph:*"
             ]
+        },
+        {
+            "Description": "S3",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::sf-fw-poc-files/*"
+        },
+        {
+            "Description": "Secrets Manager",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": [
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-fw-api-key-*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:us-east-1:649999766497:*"
         }
     ]
 }

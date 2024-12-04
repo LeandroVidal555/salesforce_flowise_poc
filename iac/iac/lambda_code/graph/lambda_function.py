@@ -13,7 +13,7 @@ def lambda_handler(event, context):
         print("Requested endpoint:", endpoint)
 
         try:
-            payload_dict = json.loads(event['body']["payload"])
+            payload_dict = json.loads(event["body"])["payload"]
             print("Request payload:", payload_dict)
 
             text = json.dumps(payload_dict["graphText"])
