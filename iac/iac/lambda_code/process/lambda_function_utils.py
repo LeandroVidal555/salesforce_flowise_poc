@@ -199,22 +199,6 @@ def fw_get_api_key():
 
 
 
-def get_iam_auth_token(region, host, port, user):
-    rds_client = boto3.client("rds", region_name=region)
-    try:
-        token = rds_client.generate_db_auth_token(
-            DBHostname=host,
-            Port=port,
-            DBUsername=user
-        )
-    except Exception as e:
-        print(f"Found error while getting token: {e}")
-        sys.exit(1)
-    
-    return token
-
-
-
 def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     # First search for the target chatflow using Flowise API
     cf_distro_domain = ssm.get_parameter(
