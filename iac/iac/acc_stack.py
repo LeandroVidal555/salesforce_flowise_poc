@@ -245,10 +245,10 @@ class AccessStack(cdk.Stack):
             default_method_options=apigw.MethodOptions(api_key_required=True)
         )
 
-        integration_process = apigw.LambdaIntegration(lambda_fn_process, proxy=True)
+        integration = apigw.LambdaIntegration(lambda_fn_process, proxy=True)
         api_ep.add_method(
             "POST",
-            integration_process,
+            integration,
             request_parameters={"method.request.path.proxy": True}
         )
 
@@ -261,3 +261,21 @@ class AccessStack(cdk.Stack):
 
 
         # Graph Lambda
+        api_ep = api_version.add_resource(
+            "graph",
+            default_method_options=apigw.MethodOptions(api_key_required=True)
+        )
+
+        integration = apigw.LambdaIntegration(lambda_fn_graph, proxy=True)
+        api_ep.add_method(
+            "POST",
+            integration,
+            request_parameters={"method.request.path.proxy": True}
+        )
+
+        lambda_fn_graph.add_permission(
+            "API_GW_InvokeGraphLambda",
+            principal = iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action = "lambda:InvokeFunction",
+            source_arn = f"arn:aws:apigateway:{cg['region']}::/restapis/{api_lambda.rest_api_id}"
+        )
