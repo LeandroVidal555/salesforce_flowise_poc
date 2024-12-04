@@ -64,21 +64,18 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
             headers={"Authorization":f"Bearer {fw_api_key}"}
         )
     except Exception as e:
-        print(f"Found error while searching for chatflow: {e}")
-        sys.exit(1)
+        raise Exception(f"Found error while searching for chatflow: {e}")
     
 
     if res.status_code != 200:
-        print(f"Error in chatflow search, got from API: {res.status_code}: {res.reason}")
-        sys.exit(1)
+        raise Exception(f"Error in chatflow search, got from API: {res.status_code}: {res.reason}")
     else:
         chatflow = next((d for d in res.json() if d["name"] == fw_chatflow), None)
 
         if chatflow != None:
             print(f"Found chatflow: {chatflow["id"]}")
         else:
-            print(f"Could not find chatflow '{fw_chatflow}'")
-            sys.exit(1)
+            raise Exception(f"Could not find chatflow '{fw_chatflow}'")
 
     file_path_source = "/".join(file_path.split("/")[1:])
     
@@ -91,12 +88,10 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
             json={"overrideConfig":{"prefix":f"{file_path}", "tableName": "graph_text", "metadata":{"source": file_path_source, "record_id": rec_id}}}
         )
     except Exception as e:
-        print(f"Found error while upserting: {e}")
-        sys.exit(1)
+        raise Exception(f"Found error while upserting: {e}")
 
     if res.status_code != 200:
-        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
-        sys.exit(1)
+        raise Exception(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
     else:
         print("Document Store vector data upsertion succeeded.")
         print(res.json())
