@@ -24,7 +24,7 @@ def lambda_handler(event, context):
 
             # Upload file to S3
             epoch_ms = int(time.time() * 1000)
-            filename = f"sftxt_{epoch_ms}.txt"
+            filename = f"graphtxt_{epoch_ms}.txt"
 
         except Exception as e:
             print(f"Found error while processing the data: {e}")
