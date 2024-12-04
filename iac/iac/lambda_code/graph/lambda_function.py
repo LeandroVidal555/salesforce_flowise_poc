@@ -13,10 +13,11 @@ def lambda_handler(event, context):
         print("Requested endpoint:", endpoint)
 
         try:
-            data_dict = json.loads(event['body'])
-            print("Request body:", data_dict)
+            payload_dict = json.loads(event['body']["payload"])
+            print("Request payload:", payload_dict)
 
-            text = json.dumps(data_dict["text"])
+            text = json.dumps(payload_dict["graphText"])
+            rec_id = json.dumps(payload_dict["record_id"])
 
             # Create text file
             create_text_file(text)

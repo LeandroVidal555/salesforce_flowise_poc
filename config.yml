@@ -48,7 +48,12 @@ compute:
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
   lambda_envvars_graph:
-    API_EP: ''
+    COMMON_PREFIX: 'sf-fw'
+    ENV: 'poc'
+    BUCKET_NAME: 'sf-fw-poc-files'
+    BUCKET_PATH_FW_DS: 'flowise_doc_store'    # flowise document store folder
+    SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
+    FW_CHATFLOW: 'Salesforce QnA Chatflow'
 
 access:
   pgres_port: 5432
