@@ -38,7 +38,6 @@ def upload_files_s3(rec_id, filename):
         print(f"File {file_path} uploaded to {bucket_name}")
     except Exception as e:
         print(f"Found error while uploading {file_path}: {e}")
-
     
     return file_path
 
@@ -81,15 +80,7 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
             print(f"Could not find chatflow '{fw_chatflow}'")
             sys.exit(1)
 
-    # if it's an excel file, use a prefix that will match all the file's sheets
-    if orig_filename.endswith(".xlsx"):
-        file_path = "_".join(file_path.split("_")[:-1])
-        file_path_source = file_path + ".xlsx"
-    else:
-        file_path_source = "/".join(file_path.split("/")[1:])
-    
-    # DUPLICATE CHECK
-    #pgres_solve_duplicate(file_path_source)
+    file_path_source = "/".join(file_path.split("/")[1:])
     
     # UPSERT VECTOR DATA
     print("Upserting vector data...")
@@ -97,7 +88,7 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
         res = requests.post(
             f"https://{cf_distro_domain}/api/v1/vector/upsert/{chatflow["id"]}",
             headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-            json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
+            json={"overrideConfig":{"prefix":f"{file_path}", "tableName": "graph_text", "metadata":{"source": file_path_source, "record_id": rec_id}}}
         )
     except Exception as e:
         print(f"Found error while upserting: {e}")
