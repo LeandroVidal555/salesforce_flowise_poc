@@ -16,8 +16,8 @@ def lambda_handler(event, context):
             payload_dict = json.loads(event["body"])["payload"]
             print("Request payload:", payload_dict)
 
-            text = json.dumps(payload_dict["graphText"])
-            rec_id = json.dumps(payload_dict["record_id"])
+            text = payload_dict["graphText"]
+            rec_id = payload_dict["record_id"]
 
             # Create text file
             create_text_file(text)
