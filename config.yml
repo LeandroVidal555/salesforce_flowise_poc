@@ -35,25 +35,21 @@ compute:
   ec2_machine_ami: 'ami-012967cc5a8c9f891'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000LkPGAU'
-  lambda_envvars_process:
+  lambda_envvars_common:
     COMMON_PREFIX: 'sf-fw'
     ENV: 'poc'
-    BASE_URL_SF: 'https://sturla3-dev-ed.develop.my.salesforce.com'
     BUCKET_NAME: 'sf-fw-poc-files'
     BUCKET_PATH_FW_DS: 'flowise_doc_store'    # flowise document store folder
-    FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
-    SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
     FW_CHATFLOW: 'Salesforce QnA Chatflow'
+  lambda_envvars_process:
+    BASE_URL_SF: 'https://sturla3-dev-ed.develop.my.salesforce.com'
+    FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
+    SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
   lambda_envvars_graph:
-    COMMON_PREFIX: 'sf-fw'
-    ENV: 'poc'
-    BUCKET_NAME: 'sf-fw-poc-files'
-    BUCKET_PATH_FW_DS: 'flowise_doc_store'    # flowise document store folder
-    SECRET_FW_CREDS_NAME: 'sf-fw-poc-fw-api-key'
-    FW_CHATFLOW: 'Salesforce QnA Chatflow'
+    TEST: 'TEST'
 
 access:
   pgres_port: 5432

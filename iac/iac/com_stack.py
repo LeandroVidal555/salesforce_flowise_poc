@@ -12,6 +12,7 @@ from aws_cdk import(
 )
 
 import boto3
+from copy import deepcopy
 
 
 def iac_output(value):
@@ -101,12 +102,18 @@ class ComputeStack(cdk.Stack):
         ##### Lambda Processor Function #####################
         #####################################################
 
+        common_envvars = cs.get("lambda_envvars_common", {})
+
+        # Lambda env vars for the process function
+        envvars_process = deepcopy(common_envvars)
+        envvars_process.update(cs.get("lambda_envvars_process", {}))
+
         # alpha lambda fn class: installs deps automatically
         lambda_fn_process = _lambda_py.PythonFunction(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process",
             entry="iac/lambda_code/process",
-            environment=cs['lambda_envvars_process'],
+            environment=envvars_process,
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
@@ -138,12 +145,16 @@ class ComputeStack(cdk.Stack):
         ##### Lambda Graph Function #########################
         #####################################################
 
+        # Lambda env vars for the graphs function
+        envvars_graph = deepcopy(common_envvars)
+        envvars_graph.update(cs.get("lambda_envvars_graph", {}))
+
         # alpha lambda fn class: installs deps automatically
         _lambda_py.PythonFunction(
             self, "Lambda_Graph_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-graph",
             entry="iac/lambda_code/graph",
-            environment=cs['lambda_envvars_graph'],
+            environment=envvars_graph,
             index="lambda_function.py", 
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
