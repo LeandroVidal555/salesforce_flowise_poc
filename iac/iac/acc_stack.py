@@ -280,6 +280,7 @@ class AccessStack(cdk.Stack):
         ####################################
         vpc_ep = ec2.InterfaceVpcEndpoint(
             self, "APIGW_VPC_EP",
+            private_dns_enabled=True,
             vpc=vpc,
             service=ec2.InterfaceVpcEndpointService(
                 name=f"com.amazonaws.{cg['region']}.execute-api"
