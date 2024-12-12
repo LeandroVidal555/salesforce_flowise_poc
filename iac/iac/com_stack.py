@@ -39,6 +39,7 @@ class ComputeStack(cdk.Stack):
         role_ec2 = iam.Role.from_role_name(self, "Role_EC2", role_name=f"{cg['common_prefix']}-{cg['env']}-ec2-role")
         role_lambda_process = iam.Role.from_role_name(self, "Role_Lambda_Process", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-process-role")
         role_lambda_graph = iam.Role.from_role_name(self, "Role_Lambda_Graph", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-graph-role")
+        role_lambda_tools = iam.Role.from_role_name(self, "Role_Lambda_Tools", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-tools-role")
         sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
 
 
@@ -159,6 +160,28 @@ class ComputeStack(cdk.Stack):
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda_graph,
+            timeout=cdk.Duration.seconds(15)
+        )
+
+
+        #####################################################
+        ##### Lambda Tools Function #########################
+        #####################################################
+
+        # Lambda env vars for the graphs function
+        envvars_tools = deepcopy(common_envvars)
+        envvars_tools.update(cs.get("lambda_envvars_tools", {}))
+
+        # alpha lambda fn class: installs deps automatically
+        _lambda_py.PythonFunction(
+            self, "Lambda_Tools_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-tools",
+            entry="iac/lambda_code/tools",
+            environment=envvars_tools,
+            index="lambda_function.py", 
+            handler="lambda_handler",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            role=role_lambda_tools,
             timeout=cdk.Duration.seconds(15)
         )
 

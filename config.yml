@@ -50,6 +50,8 @@ compute:
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
   lambda_envvars_graph:
     TEST: 'TEST'
+  lambda_envvars_tools:
+    TEST: 'TEST'
 
 access:
   pgres_port: 5432

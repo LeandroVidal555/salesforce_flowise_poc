@@ -1,0 +1,35 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Description": "CloudWatch - logs creation",
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:649999766497:*"
+        },
+        {
+            "Description": "CloudWatch - logs write",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:649999766497:log-group:/aws/lambda/sf-fw-poc-tools:*"
+            ]
+        },
+        {
+            "Description": "S3",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::sf-fw-poc-files/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:us-east-1:649999766497:*"
+        }
+    ]
+}

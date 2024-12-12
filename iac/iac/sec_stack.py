@@ -143,3 +143,27 @@ class SecurityStack(cdk.Stack):
             description="Role for the Lambda Graph function"
         )
         attach_policy_doc(self, "role_lambda_graph", role_lambda_graph)
+
+        # Create an IAM Role for the Tools Lambda function
+        role_lambda_tools = iam.Role(
+            self, "Role_Lambda_Tools",
+            role_name = f"{cg['common_prefix']}-{cg['env']}-lambda-tools-role",
+            assumed_by = iam.ServicePrincipal("lambda.amazonaws.com"),
+            description="Role for the Tools Lambda function"
+        )
+        attach_policy_doc(self, "role_lambda_tools", role_lambda_tools)
+
+        # Create a security group for the VPC Endpoint
+        sg_vpc_ep = ec2.SecurityGroup(
+            self, "SG_VPC_EP",
+            security_group_name = f"{cg['common_prefix']}-{cg['env']}-vpc-ep-sg",
+            vpc = vpc,
+            description = "SG for VPC Endpoint"
+        )
+
+        # Allow traffic from EC2
+        sg_vpc_ep.add_ingress_rule(
+            peer=ec2.Peer.security_group_id(sg_ec2.security_group_id),
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS traffic from EC2"
+        )

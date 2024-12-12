@@ -1,13 +1,26 @@
 import aws_cdk as cdk
+import json
 
 from aws_cdk import(
     aws_apigateway as apigw,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as cf_origins,
+    aws_ec2 as ec2,
     aws_iam as iam,
     aws_lambda as _lambda,
     aws_ssm as ssm
 )
+
+def get_policy_doc(file, vpc_id):
+    """Returns a PolicyDocument object, providing a json file name"""
+
+    with open(f"iac/policy_docs/{file}.json", 'r') as policy_file:
+        data = policy_file.read()
+        data = data.replace("${VPC_ID}", vpc_id)
+
+        policy_dict = json.loads(data)
+
+        return iam.PolicyDocument.from_json(policy_dict)
 
 
 class AccessStack(cdk.Stack):
@@ -18,7 +31,10 @@ class AccessStack(cdk.Stack):
         cg = config["global"]
         cs = config["access"]
 
+        vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_name=f"{cg['common_prefix']}-{cg['env']}-vpc")
+
         #sg_alb_ws = ec2.SecurityGroup.from_lookup_by_name(self, "SG_ALB_WS", security_group_name=f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg", vpc=vpc)
+        sg_vpc_ep = ec2.SecurityGroup.from_lookup_by_name(self, "SG_VPC_EP", security_group_name=f"{cg['common_prefix']}-{cg['env']}-vpc-ep-sg", vpc=vpc)
 
         ec2_instance_dns = ssm.StringParameter.from_string_parameter_name(
             self, "SSMParam_EC2_DNS",
@@ -33,6 +49,11 @@ class AccessStack(cdk.Stack):
         lambda_fn_graph = _lambda.Function.from_function_name(
             self, "Lambda_Graph_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-graph"
+        )
+
+        lambda_fn_tools = _lambda.Function.from_function_name(
+            self, "Lambda_Tools_Function",
+            function_name=f"{cg['common_prefix']}-{cg['env']}-tools"
         )
 
 
@@ -177,36 +198,11 @@ class AccessStack(cdk.Stack):
 
         
         #####################################################
-        ##### API GATEWAY - API #############################
+        ##### API GATEWAY ###################################
         #####################################################
 
-        """
-        # Define API Gateway REST API
-        api_lambda = apigw.LambdaRestApi(
-            self, "APIGW_API_LAMBDA_PROCESS",
-            rest_api_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-process-api",
-            handler=lambda_fn_process,
-            cloud_watch_role = True,
-            proxy = False,
-            deploy_options = apigw.StageOptions(
-                stage_name = "api",
-                logging_level = apigw.MethodLoggingLevel.INFO,
-                data_trace_enabled = True,
-                metrics_enabled = True,
-                tracing_enabled = True
-            )
-        )
-        
-        api_ep = api_lambda.root.add_resource("v1").add_resource("event")
-        api_ep.add_method("POST") # POST /api/v1/event
-
-        api_lambda.add_api_key(
-            "APIGW_API_LAMBDA_PROCESS_KEY",
-            api_key_name=f"/{cg['common_prefix']}-{cg['env']}-lambda-process-api-key"
-        )
-        """
-
-        ### Base API for all lambdas
+        ### Base API for all public lambdas
+        ###################################
         api_lambda = apigw.RestApi(
             self, "APIGW_API_LAMBDA",
             rest_api_name = f"/{cg['common_prefix']}-{cg['env']}-lambda-api",
@@ -239,7 +235,7 @@ class AccessStack(cdk.Stack):
         api_version = api_lambda.root.add_resource("v1")
 
 
-        # Processor Lambda (Non-SF API)
+        # Processor Lambda API (Non-SF API)
         api_ep = api_version.add_resource(
             "event_import",
             default_method_options=apigw.MethodOptions(api_key_required=True)
@@ -260,7 +256,7 @@ class AccessStack(cdk.Stack):
         )
 
 
-        # Graph Lambda
+        # Graph Lambda API
         api_ep = api_version.add_resource(
             "graph",
             default_method_options=apigw.MethodOptions(api_key_required=True)
@@ -278,4 +274,59 @@ class AccessStack(cdk.Stack):
             principal = iam.ServicePrincipal("apigateway.amazonaws.com"),
             action = "lambda:InvokeFunction",
             source_arn = f"arn:aws:apigateway:{cg['region']}::/restapis/{api_lambda.rest_api_id}"
+        )
+
+        ### Base API for all private lambdas
+        ####################################
+        vpc_ep = ec2.InterfaceVpcEndpoint(
+            self, "APIGW_VPC_EP",
+            vpc=vpc,
+            service=ec2.InterfaceVpcEndpointService(
+                name=f"com.amazonaws.{cg['region']}.execute-api"
+            ),
+            subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
+            ),
+            security_groups=[sg_vpc_ep]
+        )
+
+        api_lambda_priv = apigw.RestApi(
+            self, "APIGW_API_PRIV_LAMBDA",
+            rest_api_name = f"/{cg['common_prefix']}-{cg['env']}-priv-lambda-api",
+            cloud_watch_role = True,
+            deploy_options = apigw.StageOptions(
+                stage_name = "api",
+                logging_level = apigw.MethodLoggingLevel.INFO,
+                data_trace_enabled = True,
+                metrics_enabled = True,
+                tracing_enabled = True
+            ),
+            endpoint_configuration = apigw.EndpointConfiguration(
+                types=[apigw.EndpointType.PRIVATE],
+                vpc_endpoints=[vpc_ep]
+            ),
+            policy = get_policy_doc("rp_apigw_private", vpc.vpc_id)
+        )
+
+        # Tools Lambda function API
+        api_version_priv = api_lambda_priv.root.add_resource("v1")
+        api_ep_priv = api_version_priv.add_resource(
+            "tools_backend",
+            default_method_options=apigw.MethodOptions(api_key_required=True)
+        )
+
+        integration = apigw.LambdaIntegration(lambda_fn_tools, proxy=True)
+
+        api_ep_priv.add_method(
+            "POST",
+            integration,
+            request_parameters={"method.request.path.proxy": True}
+        )
+
+        lambda_fn_tools.add_permission(
+            "API_GW_InvokeToolsLambda",
+            principal = iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action = "lambda:InvokeFunction",
+            #source_arn = f"arn:aws:apigateway:{cg['region']}::/restapis/{api_lambda_priv.rest_api_id}"
+            source_arn = f"arn:aws:execute-api:{cg['region']}:{cg['account']}:{api_lambda_priv.rest_api_id}/*/POST/v1/tools_backend"
         )
