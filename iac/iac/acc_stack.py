@@ -311,10 +311,7 @@ class AccessStack(cdk.Stack):
 
         # Tools Lambda function API
         api_version_priv = api_lambda_priv.root.add_resource("v1")
-        api_ep_priv = api_version_priv.add_resource(
-            "tools_backend",
-            default_method_options=apigw.MethodOptions(api_key_required=True)
-        )
+        api_ep_priv = api_version_priv.add_resource("tools_backend")
 
         integration = apigw.LambdaIntegration(lambda_fn_tools, proxy=True)
 
