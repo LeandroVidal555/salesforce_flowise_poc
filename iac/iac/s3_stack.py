@@ -27,8 +27,25 @@ class S3Stack(cdk.Stack):
         ##### S3 Files Bucket ###############################
         #####################################################
 
+        # General usage Bucket
         s3.Bucket(self, "FilesBucket",
             bucket_name = f"{cg['common_prefix']}-{cg['env']}-files",
+            removal_policy = cdk.RemovalPolicy.DESTROY,
+            auto_delete_objects = True, # delete object when deleting the bucket from the stack
+        )
+
+        # Static website Bucket
+        s3.Bucket(self, "SiteBucket",
+            bucket_name = f"{cg['common_prefix']}-{cg['env']}-ui",
+            website_index_document = "index.html",
+            website_error_document = "error.html",
+            public_read_access = True,
+            block_public_access = s3.BlockPublicAccess(
+                block_public_acls = False,
+                block_public_policy = False,
+                ignore_public_acls = False,
+                restrict_public_buckets = False
+            ),
             removal_policy = cdk.RemovalPolicy.DESTROY,
             auto_delete_objects = True, # delete object when deleting the bucket from the stack
         )

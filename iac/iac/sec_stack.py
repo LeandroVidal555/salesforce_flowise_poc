@@ -59,7 +59,7 @@ class SecurityStack(cdk.Stack):
         ##### EC2 ###########################################
         #####################################################
 
-        # Create an IAM Role for the EC2 instance
+        # Create an IAM Role for the EC2 instances
         role_ec2 = iam.Role(
             self, "Role_EC2",
             role_name = f"{cg['common_prefix']}-{cg['env']}-ec2-role",
@@ -67,9 +67,14 @@ class SecurityStack(cdk.Stack):
             managed_policies = [
                 iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore")
             ],
-            description="Role for the EC2 instance"
+            description="Role for the EC2 FLowise instance"
         )
         attach_policy_doc(self, "role_ec2", role_ec2)
+
+
+        #####################################################
+        ##### EC2 - Flowise instance ########################
+        #####################################################
 
         # Create a security group for the ALB pointing to EC2 instance
         #sg_alb_ec2 = ec2.SecurityGroup(
@@ -87,29 +92,29 @@ class SecurityStack(cdk.Stack):
         #)
 
         # Create a security group for the EC2 instance
-        sg_ec2 = ec2.SecurityGroup(
-            self, "SG_EC2",
-            security_group_name = f"{cg['common_prefix']}-{cg['env']}-ec2-sg",
+        sg_ec2_fw = ec2.SecurityGroup(
+            self, "SG_EC2_FW",
+            security_group_name = f"{cg['common_prefix']}-{cg['env']}-ec2-fw-sg",
             vpc = vpc,
-            description = "SG for EC2 instance"
+            description = "SG for EC2 Flowise instance"
         )
 
         # Allow traffic from CF
-        sg_ec2.add_ingress_rule(
+        sg_ec2_fw.add_ingress_rule(
             peer=ec2.Peer.ipv4(cs['local_ip']),
             connection=ec2.Port.tcp(22),
             description="Allow SSH traffic from local PC"
         )
 
         # Allow traffic from CF - API
-        sg_ec2.add_ingress_rule(
+        sg_ec2_fw.add_ingress_rule(
             peer=ec2.Peer.any_ipv4(),
             connection=ec2.Port.tcp(80),
             description="Allow traffic from CF - API"
         )
 
         # Allow traffic from CF - UI
-        sg_ec2.add_ingress_rule(
+        sg_ec2_fw.add_ingress_rule(
             peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
             connection=ec2.Port.tcp(3000),
             description="Allow traffic from CF - UI"
@@ -117,7 +122,61 @@ class SecurityStack(cdk.Stack):
         
 
         # Add rules to allow access to RDS from the EC2 instance
-        sg_postgres.add_ingress_rule(peer=sg_ec2, connection=ec2.Port.tcp(cs["pgres_port"]))
+        sg_postgres.add_ingress_rule(peer=sg_ec2_fw, connection=ec2.Port.tcp(cs["pgres_port"]))
+        # sg_postgres.add_ingress_rule(peer=nlb_ip1, connection=ec2.Port.tcp(cs["pgres_port"]))
+        # sg_postgres.add_ingress_rule(peer=nlb_ip2, connection=ec2.Port.tcp(cs["pgres_port"]))
+
+
+        #####################################################
+        ##### EC2 - Flowise WebApp + Neo4J instance #########
+        #####################################################
+
+        # Create a security group for the ALB pointing to EC2 instance
+        #sg_alb_ec2 = ec2.SecurityGroup(
+        #    self, "SG_ALB_WS",
+        #    security_group_name = f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg",
+        #    vpc = vpc,
+        #    description = "SG for ALB pointing to the WebServer in EC2 instance"
+        #)
+
+        # Add rules to allow access from 8080 CloudFront origins
+        #sg_alb_ec2.add_ingress_rule(
+        #    peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
+        #    connection=ec2.Port.tcp(8080),
+        #    description="Allow HTTPS traffic only from 8080 CloudFront origins"
+        #)
+
+        # Create a security group for the EC2 instance
+        sg_ec2_wa = ec2.SecurityGroup(
+            self, "SG_EC2_WA",
+            security_group_name = f"{cg['common_prefix']}-{cg['env']}-ec2-wa-sg",
+            vpc = vpc,
+            description = "SG for EC2 Flowise instance"
+        )
+
+        # Allow traffic from CF
+        sg_ec2_wa.add_ingress_rule(
+            peer=ec2.Peer.ipv4(cs['local_ip']),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH traffic from local PC A"
+        )
+
+        # Allow traffic from CF
+        sg_ec2_wa.add_ingress_rule(
+            peer=ec2.Peer.ipv4(cs['local_ip']),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH traffic from local PC B"
+        )
+
+        # Allow traffic from CF - API
+        sg_ec2_wa.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(8080),
+            description="Allow traffic from CF - API"
+        )
+
+        # Add rules to allow access to RDS from the EC2 instance
+        sg_postgres.add_ingress_rule(peer=sg_ec2_wa, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip1, connection=ec2.Port.tcp(cs["pgres_port"]))
         # sg_postgres.add_ingress_rule(peer=nlb_ip2, connection=ec2.Port.tcp(cs["pgres_port"]))
 
@@ -163,7 +222,7 @@ class SecurityStack(cdk.Stack):
 
         # Allow traffic from EC2
         sg_vpc_ep.add_ingress_rule(
-            peer=ec2.Peer.security_group_id(sg_ec2.security_group_id),
+            peer=ec2.Peer.security_group_id(sg_ec2_fw.security_group_id),
             connection=ec2.Port.tcp(443),
             description="Allow HTTPS traffic from EC2"
         )

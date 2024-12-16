@@ -55,5 +55,7 @@ compute:
 
 access:
   pgres_port: 5432
-  cache_policy_be: 'disabled'
-  cache_policy_ui: 'disabled'
+  cache_policy_be_fw: 'disabled'
+  cache_policy_ui_fw: 'disabled'
+  cache_policy_be_wa: 'disabled'
+  cache_policy_ui_wa: 'disabled'

@@ -84,5 +84,13 @@
   "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-vpc-ep-sg:vpcId=vpc-0684ed7592b1272c1": {
     "securityGroupId": "sg-0bd7958efa5115795",
     "allowAllOutbound": false
+  },
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-fw-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-0f11c33d0018dba22",
+    "allowAllOutbound": false
+  },
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-wa-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-053561092c8b9a00b",
+    "allowAllOutbound": false
   }
 }

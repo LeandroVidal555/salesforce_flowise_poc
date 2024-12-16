@@ -8,6 +8,7 @@ from aws_cdk import(
     aws_ec2 as ec2,
     aws_iam as iam,
     aws_lambda as _lambda,
+    aws_s3 as s3,
     aws_ssm as ssm
 )
 
@@ -36,9 +37,14 @@ class AccessStack(cdk.Stack):
         #sg_alb_ws = ec2.SecurityGroup.from_lookup_by_name(self, "SG_ALB_WS", security_group_name=f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg", vpc=vpc)
         sg_vpc_ep = ec2.SecurityGroup.from_lookup_by_name(self, "SG_VPC_EP", security_group_name=f"{cg['common_prefix']}-{cg['env']}-vpc-ep-sg", vpc=vpc)
 
-        ec2_instance_dns = ssm.StringParameter.from_string_parameter_name(
-            self, "SSMParam_EC2_DNS",
-            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns"
+        ec2_instance_dns_fw = ssm.StringParameter.from_string_parameter_name(
+            self, "SSMParam_EC2_DNS_FW",
+            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_fw"
+        ).string_value
+
+        ec2_instance_dns_wa = ssm.StringParameter.from_string_parameter_name(
+            self, "SSMParam_EC2_DNS_WA",
+            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_wa"
         ).string_value
 
         lambda_fn_process = _lambda.Function.from_function_name(
@@ -147,7 +153,7 @@ class AccessStack(cdk.Stack):
         #)
 
         be_origin_80 = cf_origins.HttpOrigin(
-            domain_name=ec2_instance_dns, # EC2 instance public DNS
+            domain_name=ec2_instance_dns_fw, # EC2 instance public DNS
             http_port=80,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
@@ -159,14 +165,14 @@ class AccessStack(cdk.Stack):
         #)
 
         ui_origin = cf_origins.HttpOrigin(
-            domain_name=ec2_instance_dns, # EC2 instance public DNS
+            domain_name=ec2_instance_dns_fw, # EC2 instance public DNS
             http_port=3000,
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
             read_timeout=cdk.Duration.seconds(60)
         )
         
-        cache_policy_be = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
-        cache_policy_ui = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        cache_policy_be = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be_fw"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        cache_policy_ui = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui_fw"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         # CloudFront distribution
         cf_distro = cloudfront.Distribution(
             self, "CF_WS_Distribution",
@@ -198,7 +204,66 @@ class AccessStack(cdk.Stack):
 
         
         #####################################################
-        ##### API GATEWAY ###################################
+        ##### CLOUDFRONT - EC2 Go Backend & S3 WebSite ######
+        #####################################################
+
+        s3_website_bucket = s3.Bucket.from_bucket_name(self, "SiteBucket", bucket_name=f"{cg['common_prefix']}-{cg['env']}-ui")
+
+        ### Define the custom origin
+        s3_origin = cf_origins.HttpOrigin(
+            domain_name = s3_website_bucket.bucket_domain_name.replace("s3.","s3-website-"),
+            protocol_policy = cloudfront.OriginProtocolPolicy.HTTP_ONLY
+        )
+    
+        # CloudFront origin pointing to the EC2 Backend instance
+        be_origin = cf_origins.HttpOrigin(
+            domain_name=ec2_instance_dns_wa,
+            http_port=8080,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY
+        )
+
+        ### Define error responses as we use client-side routing
+        error_responses = [
+            cloudfront.ErrorResponse(
+                http_status = 404,
+                response_page_path = '/index.html',
+                response_http_status = 200
+            ),
+            cloudfront.ErrorResponse(
+                http_status = 403,
+                response_page_path = '/error.html',
+                response_http_status = 200
+            )
+        ]
+        
+        ui_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui_wa"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        be_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be_wa"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        ### Create CloudFront Distribution
+        cf = cloudfront.Distribution(self, "S3Website",
+            default_behavior = cloudfront.BehaviorOptions(
+                allowed_methods = cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+                cache_policy = ui_cache_policy,
+                origin_request_policy = cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                origin = s3_origin,
+                viewer_protocol_policy = cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+            ),
+            additional_behaviors={
+                "/api/*": cloudfront.BehaviorOptions(
+                    origin=be_origin,
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=be_cache_policy,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+                    response_headers_policy=cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT_AND_SECURITY_HEADERS,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY
+                )
+            },
+            price_class = cloudfront.PriceClass.PRICE_CLASS_100,
+            error_responses = error_responses
+        )
+
+        
+        #####################################################
+        ##### API GATEWAY - public lambdas ##################
         #####################################################
 
         ### Base API for all public lambdas
@@ -275,6 +340,11 @@ class AccessStack(cdk.Stack):
             action = "lambda:InvokeFunction",
             source_arn = f"arn:aws:apigateway:{cg['region']}::/restapis/{api_lambda.rest_api_id}"
         )
+
+        
+        #####################################################
+        ##### API GATEWAY - private lambdas #################
+        #####################################################
 
         ### Base API for all private lambdas
         ####################################

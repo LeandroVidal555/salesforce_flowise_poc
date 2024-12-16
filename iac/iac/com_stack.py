@@ -40,7 +40,8 @@ class ComputeStack(cdk.Stack):
         role_lambda_process = iam.Role.from_role_name(self, "Role_Lambda_Process", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-process-role")
         role_lambda_graph = iam.Role.from_role_name(self, "Role_Lambda_Graph", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-graph-role")
         role_lambda_tools = iam.Role.from_role_name(self, "Role_Lambda_Tools", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-tools-role")
-        sg_ec2 = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-sg", vpc=vpc)
+        sg_ec2_fw = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2_FW", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-fw-sg", vpc=vpc)
+        sg_ec2_wa = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2_WA", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-wa-sg", vpc=vpc)
 
 
         #####################################################
@@ -54,7 +55,7 @@ class ComputeStack(cdk.Stack):
 
 
         #####################################################
-        ##### EC2 ###########################################
+        ##### EC2 - Flowise Instance ########################
         #####################################################
 
         volume = ec2.BlockDevice(
@@ -80,7 +81,7 @@ class ComputeStack(cdk.Stack):
             block_devices=[volume],
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-            security_group=sg_ec2,
+            security_group=sg_ec2_fw,
             key_pair=keypair_ec2,
             role=role_ec2,
             user_data_causes_replacement=True
@@ -93,8 +94,46 @@ class ComputeStack(cdk.Stack):
         ec2_instance.add_user_data(user_data)
 
         ssm.StringParameter(
-            self, "SSMParam_EC2_DNS",
-            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns",
+            self, "SSMParam_EC2_DNS_FW",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_fw",
+            string_value=ec2_instance.instance_public_dns_name
+        )
+
+
+        #####################################################
+        ##### EC2 - WebApp + Neo4J Instance #################
+        #####################################################
+        
+        volume = ec2.BlockDevice(
+            device_name=cs["ebs_device_name"],
+            volume=ec2.BlockDeviceVolume.ebs(
+                volume_size=27,
+                volume_type=ec2.EbsDeviceVolumeType.GP3,
+                delete_on_termination=False
+            )
+        )
+
+        # Define the EC2 instance
+        ec2_instance = ec2.Instance(
+            self, "EC2_Webapp_Instance",
+            instance_name=f"{cg['common_prefix']}-{cg['env']}-webapp",
+            instance_type=ec2.InstanceType(cs["ec2_machine_type"]),
+            #machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            machine_image=ec2.MachineImage.generic_linux({
+                cg['region']: cs['ec2_machine_ami']
+            }),
+            block_devices=[volume],
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            security_group=sg_ec2_wa,
+            key_pair=keypair_ec2,
+            role=role_ec2,
+            user_data_causes_replacement=True
+        )
+
+        ssm.StringParameter(
+            self, "SSMParam_EC2_DNS_WA",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_wa",
             string_value=ec2_instance.instance_public_dns_name
         )
 
