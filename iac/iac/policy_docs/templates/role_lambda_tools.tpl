@@ -21,7 +21,10 @@
         {
             "Description": "S3",
             "Effect": "Allow",
-            "Action": "s3:PutObject",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
             "Resource": "arn:aws:s3:::${COMMON_PREFIX}-${ENV}-files/*"
         },
         {

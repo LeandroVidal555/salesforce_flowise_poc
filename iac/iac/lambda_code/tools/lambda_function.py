@@ -21,6 +21,7 @@ def lambda_handler(event, context):
             try:
                 to_do_text = payload_dict["to_do_text"]
                 assert isinstance(to_do_text, str), f"To do content must be a string, found: {type(to_do_text).__name__}"
+                print(f"Adding new item to todo list: '{to_do_text}'")
 
             except Exception as e:
                 print(f"Found error while processing the data: {e}")
@@ -34,13 +35,12 @@ def lambda_handler(event, context):
                 }
 
             try:
-                to_do_list = update_to_do_list(to_do_text) #TODO
+                update_to_do_list(to_do_text)
 
                 return {
                     "statusCode": 200,
                     "body": json.dumps({
-                        "message": "Successfully updated to do list.",
-                        "to_do_list": to_do_list
+                        "message": "Successfully updated to do list."
                     })
                 }
 
