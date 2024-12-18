@@ -103,7 +103,7 @@ class SecurityStack(cdk.Stack):
         sg_ec2_fw.add_ingress_rule(
             peer=ec2.Peer.ipv4(cs['local_ip']),
             connection=ec2.Port.tcp(22),
-            description="Allow SSH traffic from local PC"
+            description="Allow SSH traffic from local PC LMV"
         )
 
         # Allow traffic from CF - API
@@ -154,23 +154,23 @@ class SecurityStack(cdk.Stack):
             description = "SG for EC2 Flowise instance"
         )
 
-        # Allow traffic from CF
+        # Allow traffic from local SSH
         sg_ec2_wa.add_ingress_rule(
             peer=ec2.Peer.ipv4(cs['local_ip']),
             connection=ec2.Port.tcp(22),
-            description="Allow SSH traffic from local PC A"
+            description="Allow SSH traffic from local PC LMV"
         )
 
-        # Allow traffic from CF
+        # Allow traffic from local SSH
         sg_ec2_wa.add_ingress_rule(
-            peer=ec2.Peer.ipv4(cs['local_ip']),
+            peer=ec2.Peer.ipv4("111.222.222.111/32"),
             connection=ec2.Port.tcp(22),
             description="Allow SSH traffic from local PC B"
         )
 
         # Allow traffic from CF - API
         sg_ec2_wa.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
+            peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
             connection=ec2.Port.tcp(8080),
             description="Allow traffic from CF - API"
         )

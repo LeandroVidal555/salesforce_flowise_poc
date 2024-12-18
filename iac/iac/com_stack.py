@@ -73,7 +73,7 @@ class ComputeStack(cdk.Stack):
         ec2_instance = ec2.Instance(
             self, "EC2_Instance",
             instance_name=f"{cg['common_prefix']}-{cg['env']}-flowise",
-            instance_type=ec2.InstanceType(cs["ec2_machine_type"]),
+            instance_type=ec2.InstanceType(cs["ec2_machine_type_fw"]),
             #machine_image=ec2.MachineImage.latest_amazon_linux2023(),
             machine_image=ec2.MachineImage.generic_linux({
                 cg['region']: cs['ec2_machine_ami']
@@ -117,7 +117,7 @@ class ComputeStack(cdk.Stack):
         ec2_instance = ec2.Instance(
             self, "EC2_Webapp_Instance",
             instance_name=f"{cg['common_prefix']}-{cg['env']}-webapp",
-            instance_type=ec2.InstanceType(cs["ec2_machine_type"]),
+            instance_type=ec2.InstanceType(cs["ec2_machine_type_wa"]),
             #machine_image=ec2.MachineImage.latest_amazon_linux2023(),
             machine_image=ec2.MachineImage.generic_linux({
                 cg['region']: cs['ec2_machine_ami']
@@ -130,6 +130,12 @@ class ComputeStack(cdk.Stack):
             role=role_ec2,
             user_data_causes_replacement=True
         )
+
+        # Read user data script and load it to the EC2 Backend instance's config
+        with open("iac/ec2_user_data/ec2_user_data_wa.sh", 'r') as file:
+            user_data_wa = file.read()
+
+        ec2_instance.add_user_data(user_data_wa)
 
         ssm.StringParameter(
             self, "SSMParam_EC2_DNS_WA",
