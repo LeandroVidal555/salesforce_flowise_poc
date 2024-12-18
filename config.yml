@@ -32,7 +32,7 @@ s3:
 
 compute:
   ec2_machine_type_fw: 't3a.micro'
-  ec2_machine_type_wa: 't3a.small'
+  ec2_machine_type_wa: 't3a.medium'
   ec2_machine_ami: 'ami-012967cc5a8c9f891'
   ebs_device_name: '/dev/xvda'
   event_bus_arn: 'arn:aws:events:us-east-1:649999766497:event-bus/aws.partner/salesforce.com/00Daj00000C74U9EAJ/0YLaj0000000LkPGAU'

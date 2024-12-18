@@ -258,3 +258,5 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
 
 
 
+def send_text_relations(file_path, filename):
+    pass

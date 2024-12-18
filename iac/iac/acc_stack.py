@@ -155,6 +155,7 @@ class AccessStack(cdk.Stack):
         be_origin_80 = cf_origins.HttpOrigin(
             domain_name=ec2_instance_dns_fw, # EC2 instance public DNS
             http_port=80,
+            origin_id=f"{cg['common_prefix']}-{cg['env']}-flowise-api-origin",
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
         )
 
@@ -167,6 +168,7 @@ class AccessStack(cdk.Stack):
         ui_origin = cf_origins.HttpOrigin(
             domain_name=ec2_instance_dns_fw, # EC2 instance public DNS
             http_port=3000,
+            origin_id=f"{cg['common_prefix']}-{cg['env']}-flowise-ui-origin",
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
             read_timeout=cdk.Duration.seconds(60)
         )
@@ -212,6 +214,7 @@ class AccessStack(cdk.Stack):
         ### Define the custom origin
         s3_origin = cf_origins.HttpOrigin(
             domain_name = s3_website_bucket.bucket_domain_name.replace("s3.","s3-website-"),
+            origin_id=f"{cg['common_prefix']}-{cg['env']}-webapp-ui-origin",
             protocol_policy = cloudfront.OriginProtocolPolicy.HTTP_ONLY
         )
     
@@ -219,6 +222,8 @@ class AccessStack(cdk.Stack):
         be_origin = cf_origins.HttpOrigin(
             domain_name=ec2_instance_dns_wa,
             http_port=8080,
+            origin_id=f"{cg['common_prefix']}-{cg['env']}-webapp-api-origin",
+            read_timeout=cdk.Duration.seconds(60),
             protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY
         )
 

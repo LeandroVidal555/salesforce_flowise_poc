@@ -1,6 +1,11 @@
 from lambda_function_utils import *
 import json
 import time
+import boto3
+
+# Initialize the SSM client
+ssm = boto3.client('ssm')
+
 
 def lambda_handler(event, context):
     print("##### RECEIVED EVENT:", json.dumps(event))
@@ -60,6 +65,11 @@ def lambda_handler(event, context):
         # Interact with Flowise API for vector data upsertion
         fw_api_key = fw_get_api_key()
         load_process_upsert(file_path, filename, rec_id, fw_api_key)
+
+        # PSEUDOCODE TODO
+        #ssm_param_send_text = ssm.get_param("ssm_param_send_text")
+        #if ssm_param_send_text:
+        #    send_text_relations(file_path, filename)
     
     else:
         print("Event source unrecognized.")
