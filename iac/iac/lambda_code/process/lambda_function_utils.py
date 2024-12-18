@@ -202,7 +202,7 @@ def fw_get_api_key():
 def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     # First search for the target chatflow using Flowise API
     cf_distro_domain = ssm.get_parameter(
-        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain",
+        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain"
     )['Parameter']['Value']
 
     try:
@@ -258,5 +258,23 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
 
 
 
-def send_text_relations(file_path, filename):
-    pass
+def send_text(file_path, orig_filename):
+    print("file_path: ", file_path) # DEBUG
+    print("orig_filename: ", orig_filename) # DEBUG
+
+    extension = os.path.splitext(orig_filename)[1].lower()
+    if extension == ".xlsx":
+        # TODO extraer el texto de el/los csv extraído/s
+        pass
+    elif extension == ".docx":
+        # TODO extraer el texto del docx
+        pass
+    elif extension == ".pdf":
+        # TODO extraer el texto del pdf
+        pass
+    elif extension in supported_formats_img:
+        # TODO extraer el texto del txt extraído
+        pass
+    else:
+        # TODO extraer el texto directamente del download
+        pass
