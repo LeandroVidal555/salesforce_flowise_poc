@@ -66,12 +66,9 @@ def lambda_handler(event, context):
         fw_api_key = fw_get_api_key()
         load_process_upsert(file_path, filename, rec_id, fw_api_key)
 
-        # PSEUDOCODE TODO
         send_text_enabled = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/send_text")['Parameter']['Value']
         if send_text_enabled == "True":
-            send_text(file_path, filename)
-
-
+            send_text(filename)
     
     else:
         print("Event source unrecognized.")

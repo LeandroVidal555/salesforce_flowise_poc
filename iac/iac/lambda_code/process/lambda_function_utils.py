@@ -9,6 +9,7 @@ from PIL import Image
 import pytesseract
 from openpyxl import load_workbook
 import csv
+from fitz import open as fitz_open
 
 
 
@@ -166,6 +167,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
                 print(f"File {file_path} uploaded to {bucket_name}")
             except Exception as e:
                 print(f"Found error while uploading {file_path}: {e}")
+
         elif filename_ext == ".xlsx":
             print("Uploading xslx file's extracted csv for upsertion...")
             os.rename("/tmp/download", "/tmp/download.xlsx") # openpyxl requires an extension
@@ -258,23 +260,50 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
 
 
 
-def send_text(file_path, orig_filename):
-    print("file_path: ", file_path) # DEBUG
-    print("orig_filename: ", orig_filename) # DEBUG
+def extract_txt_from_xlsx():
+    pass
 
+
+
+def extract_txt_from_docx():
+    pass
+
+
+
+def extract_txt_from_pdf():
+    print("Extracting text from PDF...")
+    input_path = "/tmp/download"
+    output_path = "/tmp/extracted.txt"
+
+    with fitz_open(input_path) as pdf_file:
+        with open(output_path, 'w') as txt_file:
+            for page in pdf_file:
+                # Extract blocks of text
+                blocks = page.get_text("blocks")
+                # Sort blocks by their vertical position
+                blocks.sort(key=lambda b: b[1])  # b[1] is the y-coordinate
+                for block in blocks:
+                    txt_file.write(block[4] + '\n')  # b[4] is the text content
+
+
+
+def send_text(orig_filename):
     extension = os.path.splitext(orig_filename)[1].lower()
     if extension == ".xlsx":
-        # TODO extraer el texto de el/los csv extraído/s
-        pass
+        extract_txt_from_xlsx()
+        file_extracted = "/tmp/extracted.txt"
     elif extension == ".docx":
-        # TODO extraer el texto del docx
-        pass
+        extract_txt_from_docx()
+        file_extracted = "/tmp/extracted.txt"
     elif extension == ".pdf":
-        # TODO extraer el texto del pdf
-        pass
+        extract_txt_from_pdf()
+        file_extracted = "/tmp/extracted.txt"
     elif extension in supported_formats_img:
-        # TODO extraer el texto del txt extraído
-        pass
+        file_extracted = "/tmp/image.txt"
     else:
-        # TODO extraer el texto directamente del download
-        pass
+        file_extracted = "/tmp/download"
+    
+    with open(file_extracted, 'r') as txt_file:
+        extracted_text = txt_file.read()
+
+    print(extracted_text)
