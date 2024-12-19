@@ -42,6 +42,23 @@ ssm = boto3.client('ssm')
 
 
 
+def extract_txt_from_pdf():
+    print("Extracting text from PDF...")
+    input_path = "/tmp/download"
+    output_path = "/tmp/extracted.txt"
+
+    with fitz_open(input_path) as pdf_file:
+        with open(output_path, 'w') as txt_file:
+            for page in pdf_file:
+                # Extract blocks of text
+                blocks = page.get_text("blocks")
+                # Sort blocks by their vertical position
+                blocks.sort(key=lambda b: b[1])  # b[1] is the y-coordinate
+                for block in blocks:
+                    txt_file.write(block[4] + '\n')  # b[4] is the text content
+
+
+
 def sf_get_token():
     # Get SF credentials
     print("Getting SM creds...")
@@ -156,7 +173,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
             print(f"Found error while uploading {file_path}: {e}")
 
         # Upload the file - flowise (image extracted text)
-        if filename_ext in supported_formats_img:
+        if filename_ext.lower() in supported_formats_img:
             print("Uploading image file's extracted text for upsertion...")
             with open("/tmp/image.txt", 'w') as f:
                 txt_file = pytesseract.image_to_string(Image.open("/tmp/download"))
@@ -168,7 +185,8 @@ def upload_files_s3(rec_id, filename, doc_id=None):
             except Exception as e:
                 print(f"Found error while uploading {file_path}: {e}")
 
-        elif filename_ext == ".xlsx":
+        # Upload the file - flowise (xlsx extracted csvs)
+        elif filename_ext.lower() == ".xlsx":
             print("Uploading xslx file's extracted csv for upsertion...")
             os.rename("/tmp/download", "/tmp/download.xlsx") # openpyxl requires an extension
             wb = load_workbook("/tmp/download.xlsx")
@@ -187,6 +205,17 @@ def upload_files_s3(rec_id, filename, doc_id=None):
                 except Exception as e:
                     print(f"Found error while uploading {file_path}: {e}")
                     sys.exit(1)
+
+        # Upload the file - flowise (pdf extracted text)
+        elif filename_ext.lower() == ".pdf":
+            print("Uploading PDF file's extracted text for upsertion...")
+            extract_txt_from_pdf()
+            try:
+                file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfpdf")
+                s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
+                print(f"File {file_path} uploaded to {bucket_name}")
+            except Exception as e:
+                print(f"Found error while uploading {file_path}: {e}")
 
     return file_path
 
@@ -270,23 +299,6 @@ def extract_txt_from_docx():
 
 
 
-def extract_txt_from_pdf():
-    print("Extracting text from PDF...")
-    input_path = "/tmp/download"
-    output_path = "/tmp/extracted.txt"
-
-    with fitz_open(input_path) as pdf_file:
-        with open(output_path, 'w') as txt_file:
-            for page in pdf_file:
-                # Extract blocks of text
-                blocks = page.get_text("blocks")
-                # Sort blocks by their vertical position
-                blocks.sort(key=lambda b: b[1])  # b[1] is the y-coordinate
-                for block in blocks:
-                    txt_file.write(block[4] + '\n')  # b[4] is the text content
-
-
-
 def send_text(orig_filename):
     extension = os.path.splitext(orig_filename)[1].lower()
     if extension == ".xlsx":
@@ -296,7 +308,6 @@ def send_text(orig_filename):
         extract_txt_from_docx()
         file_extracted = "/tmp/extracted.txt"
     elif extension == ".pdf":
-        extract_txt_from_pdf()
         file_extracted = "/tmp/extracted.txt"
     elif extension in supported_formats_img:
         file_extracted = "/tmp/image.txt"
