@@ -290,7 +290,9 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
 
 
 def extract_txt_from_xlsx():
-    pass
+    csv_file_paths = [os.path.join('/tmp', file) for file in os.listdir('/tmp') if file.endswith('.csv')]
+    
+    return csv_file_paths
 
 
 
@@ -301,20 +303,24 @@ def extract_txt_from_docx():
 
 def send_text(orig_filename):
     extension = os.path.splitext(orig_filename)[1].lower()
-    if extension == ".xlsx":
-        extract_txt_from_xlsx()
-        file_extracted = "/tmp/extracted.txt"
-    elif extension == ".docx":
-        extract_txt_from_docx()
-        file_extracted = "/tmp/extracted.txt"
-    elif extension == ".pdf":
-        file_extracted = "/tmp/extracted.txt"
-    elif extension in supported_formats_img:
-        file_extracted = "/tmp/image.txt"
-    else:
-        file_extracted = "/tmp/download"
-    
-    with open(file_extracted, 'r') as txt_file:
-        extracted_text = txt_file.read()
+    files_extracted = []
 
-    print(extracted_text)
+    if extension == ".xlsx":
+        files_extracted = extract_txt_from_xlsx()
+    elif extension == ".docx":
+        print("File extension '.docx' not yet suppported.")
+        sys.exit(1)
+        extract_txt_from_docx()
+        files_extracted.append("/tmp/extracted.txt")
+    elif extension == ".pdf":
+        files_extracted.append("/tmp/extracted.txt")
+    elif extension in supported_formats_img:
+        files_extracted.append("/tmp/image.txt")
+    else:
+        files_extracted.append("/tmp/download")
+    
+    for file_extracted in files_extracted:
+        with open(file_extracted, 'r') as txt_file:
+            extracted_text = txt_file.read()
+            print(f"### {file_extracted}:")
+            print(extracted_text)
