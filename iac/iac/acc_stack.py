@@ -211,10 +211,9 @@ class AccessStack(cdk.Stack):
 
         s3_website_bucket = s3.Bucket.from_bucket_name(self, "SiteBucket", bucket_name=f"{cg['common_prefix']}-{cg['env']}-ui")
 
-        ### Define the custom origin
-        s3_origin = cf_origins.HttpOrigin(
-            domain_name = s3_website_bucket.bucket_domain_name.replace("s3.","s3-website-"),
-            origin_id=f"{cg['common_prefix']}-{cg['env']}-webapp-ui-origin",
+        s3_origin = cf_origins.S3StaticWebsiteOrigin(
+            bucket = s3_website_bucket,
+            origin_id = f"{cg['common_prefix']}-{cg['env']}-webapp-ui-origin",
             protocol_policy = cloudfront.OriginProtocolPolicy.HTTP_ONLY
         )
     
