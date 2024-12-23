@@ -68,7 +68,7 @@ def lambda_handler(event, context):
 
         send_text_enabled = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/send_text")['Parameter']['Value']
         if send_text_enabled == "True":
-            send_text(filename)
+            send_text(filename, rec_id)
     
     else:
         print("Event source unrecognized.")

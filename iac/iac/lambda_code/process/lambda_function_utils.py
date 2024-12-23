@@ -314,7 +314,7 @@ def extract_txt_from_docx():
 
 
 
-def send_text(orig_filename):
+def send_text(orig_filename, record_id):
     extension = os.path.splitext(orig_filename)[1].lower()
     files_extracted = []
 
@@ -329,6 +329,8 @@ def send_text(orig_filename):
         files_extracted.append("/tmp/image.txt")
     else:
         files_extracted.append("/tmp/download")
+
+    s3_uri = f"s3://{bucket_name}/{bucket_path_fw_ds}/{record_id}/sffile_{orig_filename}"
     
     #for file_extracted in files_extracted:
     #    with open(file_extracted, 'r') as txt_file:
@@ -336,4 +338,4 @@ def send_text(orig_filename):
     #        print(f"### {file_extracted}:")
     #        print(extracted_text)
 
-    # TODO: send to AN api
+    # TODO: send to AN api, include the s3 path
