@@ -5,3 +5,4 @@ pytesseract
 openpyxl
 psycopg2-binary
 PyMuPDF
+python-docx

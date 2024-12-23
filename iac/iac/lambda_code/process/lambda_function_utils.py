@@ -10,6 +10,7 @@ import pytesseract
 from openpyxl import load_workbook
 import csv
 from fitz import open as fitz_open
+from docx import Document
 
 
 
@@ -209,7 +210,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
         # Upload the file - flowise (pdf extracted text)
         elif filename_ext.lower() == ".pdf":
             print("Uploading PDF file's extracted text for upsertion...")
-            extract_txt_from_pdf()
+            extract_txt_from_pdf() # not using Flowise doc store extractor as it is quite faulty
             try:
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfpdf")
                 s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
@@ -285,19 +286,31 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
         sys.exit(1)
     else:
         print("Document Store vector data upsertion succeeded.")
-        print(res.json())
+        #print(res.json())
 
 
 
 def extract_txt_from_xlsx():
     csv_file_paths = [os.path.join('/tmp', file) for file in os.listdir('/tmp') if file.endswith('.csv')]
-    
     return csv_file_paths
 
 
 
 def extract_txt_from_docx():
-    pass
+    input_path = '/tmp/download'
+    output_path = '/tmp/extracted.txt'
+
+    try:
+        doc = Document(input_path)
+        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+
+        with open(output_path, 'w', encoding='utf-8') as file:
+            file.write(text)
+
+        print(f'Text extracted successfully to {output_path}')
+
+    except Exception as e:
+        print(f'Error extracting text from docx file: {e}')
 
 
 
@@ -308,8 +321,6 @@ def send_text(orig_filename):
     if extension == ".xlsx":
         files_extracted = extract_txt_from_xlsx()
     elif extension == ".docx":
-        print("File extension '.docx' not yet suppported.")
-        sys.exit(1)
         extract_txt_from_docx()
         files_extracted.append("/tmp/extracted.txt")
     elif extension == ".pdf":
@@ -319,8 +330,10 @@ def send_text(orig_filename):
     else:
         files_extracted.append("/tmp/download")
     
-    for file_extracted in files_extracted:
-        with open(file_extracted, 'r') as txt_file:
-            extracted_text = txt_file.read()
-            print(f"### {file_extracted}:")
-            print(extracted_text)
+    #for file_extracted in files_extracted:
+    #    with open(file_extracted, 'r') as txt_file:
+    #        extracted_text = txt_file.read()
+    #        print(f"### {file_extracted}:")
+    #        print(extracted_text)
+
+    # TODO: send to AN api
