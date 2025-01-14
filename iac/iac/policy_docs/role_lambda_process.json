@@ -44,7 +44,8 @@
             ],
             "Resource": [
                 "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-connected-app-creds-*",
-                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-fw-api-key-*"
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-fw-api-key-*",
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-webapp-api-key-*"
             ]
         },
         {

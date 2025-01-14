@@ -44,7 +44,7 @@ def lambda_handler(event, context):
             filename = dl_sf_file(doc_id, sf_token)
 
             # Upload original file/s to S3  
-            file_path = upload_files_s3(rec_id, filename, doc_id)
+            file_path, file_path_full = upload_files_s3(rec_id, filename, doc_id)
 
         elif action == "ImportText":
             print(f"{action} action in SF. Initiating parse and insert process...")
@@ -67,8 +67,8 @@ def lambda_handler(event, context):
         load_process_upsert(file_path, filename, rec_id, fw_api_key)
 
         send_text_enabled = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/send_text")['Parameter']['Value']
-        if send_text_enabled == "True":
-            send_text(filename, rec_id)
+        if send_text_enabled == "True" and action == "ImportFile":
+            send_text(file_path_full)
     
     else:
         print("Event source unrecognized.")

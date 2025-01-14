@@ -23,6 +23,7 @@ file_download_path = os.getenv("FILE_DOWNLOAD_PATH")
 bucket_name = os.getenv("BUCKET_NAME")
 bucket_path_fw_ds = os.getenv("BUCKET_PATH_FW_DS")
 secret_fw_creds_name = os.getenv("SECRET_FW_CREDS_NAME")
+secret_webapp_api_key_name = os.getenv("SECRET_WA_API_KEY_NAME")
 fw_chatflow = os.getenv("FW_CHATFLOW")
 supported_formats = json.loads(os.getenv("SUPPORTED_FORMATS"))
 supported_formats_img = json.loads(os.getenv("SUPPORTED_FORMATS_IMG"))
@@ -167,11 +168,11 @@ def upload_files_s3(rec_id, filename, doc_id=None):
         if not filename_base.startswith("sffile_"):
             filename_base = "sffile_" + filename_base
         try:
-            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
-            s3.upload_file("/tmp/download", bucket_name, file_path)
-            print(f"File {file_path} uploaded to {bucket_name}")
+            file_path_full = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
+            s3.upload_file("/tmp/download", bucket_name, file_path_full)
+            print(f"File {file_path_full} uploaded to {bucket_name}")
         except Exception as e:
-            print(f"Found error while uploading {file_path}: {e}")
+            print(f"Found error while uploading {file_path_full}: {e}")
 
         # Upload the file - flowise (image extracted text)
         if filename_ext.lower() in supported_formats_img:
@@ -218,7 +219,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
             except Exception as e:
                 print(f"Found error while uploading {file_path}: {e}")
 
-    return file_path
+    return file_path, file_path_full
 
 
 
@@ -314,8 +315,8 @@ def extract_txt_from_docx():
 
 
 
-def send_text(orig_filename, record_id):
-    extension = os.path.splitext(orig_filename)[1].lower()
+def send_text(file_path_full):
+    extension = os.path.splitext(file_path_full)[1].lower()
     files_extracted = []
 
     if extension == ".xlsx":
@@ -330,12 +331,31 @@ def send_text(orig_filename, record_id):
     else:
         files_extracted.append("/tmp/download")
 
-    s3_uri = f"s3://{bucket_name}/{bucket_path_fw_ds}/{record_id}/sffile_{orig_filename}"
-    
-    #for file_extracted in files_extracted:
-    #    with open(file_extracted, 'r') as txt_file:
-    #        extracted_text = txt_file.read()
-    #        print(f"### {file_extracted}:")
-    #        print(extracted_text)
+    cf_distro_domain = ssm.get_parameter(
+        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain_webapp"
+    )['Parameter']['Value']
 
-    # TODO: send to AN api, include the s3 path
+    s3_uri = f"s3://{bucket_name}/{file_path_full}"
+
+    webapp_api_key = sm.get_secret_value(SecretId=secret_webapp_api_key_name)["SecretString"]
+
+    # SEND TEXT TO WEBAPP API
+    for file_extracted in files_extracted:
+        with open(file_extracted, 'r', encoding='utf-8') as f:
+            file_content = f.read()
+        
+        print(f"Sending text for file: {file_extracted}...")
+        try:
+            res = requests.post(
+                f"https://{cf_distro_domain}/api/aishit/analyseAndStoreText",
+                headers={"Authorization": webapp_api_key, "Content-Type": "application/json"},
+                json={"text": file_content, "resourceUrl": s3_uri}
+            )
+
+            if res.status_code == 200:
+                print("Successfully sent text.")
+            else:
+                print(f"Found error while sending text. Got {res.status_code}: '{res.reason}'")
+        except Exception as e:
+            print(f"Found error while sending text: {e}")
+            sys.exit(1)

@@ -47,6 +47,7 @@ compute:
     BASE_URL_SF: 'https://sturla3-dev-ed.develop.my.salesforce.com'
     FILE_DOWNLOAD_PATH: 'services/data/v61.0/connect/files'
     SECRET_SF_CREDS_NAME: 'sf-fw-poc-connected-app-creds'
+    SECRET_WA_API_KEY_NAME: 'sf-fw-poc-webapp-api-key'
     SUPPORTED_FORMATS: '[".json", ".txt", ".csv", ".docx", ".xlsx", ".pdf", ".aspx", ".asp", ".cpp", ".c", ".cs", ".css", ".go", ".h", ".kt", ".java", ".js", ".less", ".ts", ".php", ".proto", ".python", ".py", ".rst", ".ruby", ".rb", ".rs", ".scala", ".sc", ".scss", ".sol", ".sql", ".swift", ".markdown", ".md", ".tex", ".ltx", ".html", ".vb", ".xml"]'
     SUPPORTED_FORMATS_IMG: '[".bmp", ".jpg", ".jpeg", ".png", ".tiff", ".gif", ".webp", ".heic", ".heif", ".ico", ".pcx"]'
   lambda_envvars_graph:

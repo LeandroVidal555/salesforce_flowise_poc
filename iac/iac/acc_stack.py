@@ -243,7 +243,7 @@ class AccessStack(cdk.Stack):
         ui_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui_wa"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         be_cache_policy = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_be_wa"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
         ### Create CloudFront Distribution
-        cf = cloudfront.Distribution(self, "S3Website",
+        cf_distro = cloudfront.Distribution(self, "S3Website",
             default_behavior = cloudfront.BehaviorOptions(
                 allowed_methods = cloudfront.AllowedMethods.ALLOW_GET_HEAD,
                 cache_policy = ui_cache_policy,
@@ -263,6 +263,12 @@ class AccessStack(cdk.Stack):
             },
             price_class = cloudfront.PriceClass.PRICE_CLASS_100,
             error_responses = error_responses
+        )
+        
+        ssm.StringParameter(
+            self, "SSMParam_CF_DISTRO_DOMAIN_WA",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/cf_distro_domain_webapp",
+            string_value=cf_distro.distribution_domain_name
         )
 
         
