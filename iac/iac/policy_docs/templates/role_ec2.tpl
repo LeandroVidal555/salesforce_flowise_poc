@@ -61,7 +61,11 @@
         {
             "Description": "S3",
             "Effect": "Allow",
-            "Action": "s3:PutObject",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
             "Resource": "arn:aws:s3:::${COMMON_PREFIX}-${ENV}-files/*"
         }
     ]
