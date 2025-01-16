@@ -317,6 +317,7 @@ def extract_txt_from_docx():
 
 def send_text(file_path_full):
     extension = os.path.splitext(file_path_full)[1].lower()
+    file_name = ''.join(file_path_full.split("/")[-1])
     files_extracted = []
 
     if extension == ".xlsx":
@@ -344,7 +345,12 @@ def send_text(file_path_full):
         with open(file_extracted, 'r', encoding='utf-8') as f:
             file_content = f.read()
         
-        print(f"Sending text for file: {file_extracted}...")
+        if extension == ".xlsx":
+            sheet_name = ''.join(file_extracted.split("/")[-1])
+            print(f"Sending text for file: {file_name} - {sheet_name}...")
+        else:
+            print(f"Sending text for file: {file_name}...")
+
         try:
             res = requests.post(
                 f"https://{cf_distro_domain}/api/aishit/analyseAndStoreText",
