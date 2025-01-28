@@ -5,7 +5,7 @@ import requests
 import sys
 import urllib.parse
 import boto3
-from PIL import Image
+from PIL import Image, ImageFilter, ImageEnhance
 import pytesseract
 from openpyxl import load_workbook
 import csv
@@ -176,10 +176,22 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (image extracted text)
         if filename_ext.lower() in supported_formats_img:
-            print("Uploading image file's extracted text for upsertion...")
+            print("Preparing image for text extraction...")
+            image = Image.open("/tmp/download")
+            image_format = image.format
+            image = image.convert("L") # apply grayscale
+            enhancer = ImageEnhance.Contrast(image)
+            image = enhancer.enhance(2) # apply contrast
+            image = image.filter(ImageFilter.SHARPEN) # sharpen
+            image = image.resize((int(image.width * 1.5), int(image.height * 1.5))) # magnify
+            image.save("/tmp/download_enhanced", format=image_format)
+
+            print("Starting image text extraction...")
             with open("/tmp/image.txt", 'w') as f:
-                txt_file = pytesseract.image_to_string(Image.open("/tmp/download"))
+                txt_file = pytesseract.image_to_string(Image.open("/tmp/download_enhanced"))
                 f.write(txt_file)
+
+            print("Uploading image extracted text for upsertion...")
             try:
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfimg")
                 s3.upload_file("/tmp/image.txt", bucket_name, file_path)
