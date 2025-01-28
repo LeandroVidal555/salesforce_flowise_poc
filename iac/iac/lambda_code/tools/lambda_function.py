@@ -15,6 +15,15 @@ def lambda_handler(event, context):
         payload_dict = json.loads(event["body"])
         print("Request payload:", payload_dict)
 
+        if "action" not in payload_dict:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({
+                    "error": "Unprocessable Entity",
+                    "message": "Tool action identifier not specified."
+                })
+            }
+
 
         if payload_dict["action"] == "add_to_do":
 

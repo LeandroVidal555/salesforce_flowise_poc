@@ -19,6 +19,17 @@ def lambda_handler(event, context):
         data_dict = json.loads(event['body'])
         print("Request body:", data_dict)
 
+        if "source" not in data_dict:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({
+                    "error": "Unprocessable Entity",
+                    "message": "Event source not specified."
+                })
+            }
+
+        print("Source identificator:", data_dict["source"])
+
         return {
             "statusCode": 200,
             "body": json.dumps({
