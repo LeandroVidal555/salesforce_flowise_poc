@@ -165,7 +165,8 @@ class ComputeStack(cdk.Stack):
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda_process,
             memory_size=512,
-            timeout=cdk.Duration.seconds(120)
+            timeout=cdk.Duration.seconds(120),
+            retry_attempts=0
         )
 
         s3_bucket = s3.Bucket.from_bucket_name(self, "FilesBucket", f"{cg['common_prefix']}-{cg['env']}-files")
@@ -205,7 +206,8 @@ class ComputeStack(cdk.Stack):
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda_graph,
-            timeout=cdk.Duration.seconds(15)
+            timeout=cdk.Duration.seconds(15),
+            retry_attempts=0
         )
 
 
@@ -227,7 +229,8 @@ class ComputeStack(cdk.Stack):
             handler="lambda_handler",
             runtime=_lambda.Runtime.PYTHON_3_12,
             role=role_lambda_tools,
-            timeout=cdk.Duration.seconds(15)
+            timeout=cdk.Duration.seconds(15),
+            retry_attempts=0
         )
 
 
