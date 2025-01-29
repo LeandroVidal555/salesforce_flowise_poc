@@ -187,21 +187,21 @@ def upload_files_s3(rec_id, filename, doc_id=None):
             image.save("/tmp/download_enhanced", format=image_format)
 
             print("Starting image text extraction...")
-            with open("/tmp/image.txt", 'w') as f:
+            with open("/tmp/extracted.txt", 'w') as f:
                 txt_file = pytesseract.image_to_string(Image.open("/tmp/download_enhanced"))
                 f.write(txt_file)
 
-            print("Uploading image extracted text for upsertion...")
+            print("Uploading image file's extracted text for upsertion...")
             try:
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfimg")
-                s3.upload_file("/tmp/image.txt", bucket_name, file_path)
+                s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
                 print(f"File {file_path} uploaded to {bucket_name}")
             except Exception as e:
                 print(f"Found error while uploading {file_path}: {e}")
 
         # Upload the file - flowise (xlsx extracted csvs)
         elif filename_ext.lower() == ".xlsx":
-            print("Uploading xslx file's extracted csv for upsertion...")
+            print("Uploading XLSX file's extracted csv for upsertion...")
             os.rename("/tmp/download", "/tmp/download.xlsx") # openpyxl requires an extension
             wb = load_workbook("/tmp/download.xlsx")
             for sheet_name in wb.sheetnames:
@@ -226,6 +226,19 @@ def upload_files_s3(rec_id, filename, doc_id=None):
             extract_txt_from_pdf() # not using Flowise doc store extractor as it is quite faulty
             try:
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfpdf")
+                s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
+                print(f"File {file_path} uploaded to {bucket_name}")
+            except Exception as e:
+                print(f"Found error while uploading {file_path}: {e}")
+
+        # Upload the file - flowise (docx extracted text)
+        elif filename_ext.lower() == ".docx":
+            print("Uploading DOCX file's extracted text for upsertion...")
+            text = '\n'.join([paragraph.text for paragraph in Document("/tmp/download").paragraphs])
+            with open("/tmp/extracted.txt", 'w', encoding='utf-8') as file:
+                file.write(text)
+            try:
+                file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfdocx")
                 s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
                 print(f"File {file_path} uploaded to {bucket_name}")
             except Exception as e:
@@ -309,24 +322,6 @@ def extract_txt_from_xlsx():
 
 
 
-def extract_txt_from_docx():
-    input_path = '/tmp/download'
-    output_path = '/tmp/extracted.txt'
-
-    try:
-        doc = Document(input_path)
-        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-
-        with open(output_path, 'w', encoding='utf-8') as file:
-            file.write(text)
-
-        print(f'Text extracted successfully to {output_path}')
-
-    except Exception as e:
-        print(f'Error extracting text from docx file: {e}')
-
-
-
 def send_text(file_path_full):
     extension = os.path.splitext(file_path_full)[1].lower()
     file_name = ''.join(file_path_full.split("/")[-1])
@@ -334,13 +329,8 @@ def send_text(file_path_full):
 
     if extension == ".xlsx":
         files_extracted = extract_txt_from_xlsx()
-    elif extension == ".docx":
-        extract_txt_from_docx()
+    elif extension in [".docx", ".pdf"] or extension in supported_formats_img:
         files_extracted.append("/tmp/extracted.txt")
-    elif extension == ".pdf":
-        files_extracted.append("/tmp/extracted.txt")
-    elif extension in supported_formats_img:
-        files_extracted.append("/tmp/image.txt")
     else:
         files_extracted.append("/tmp/download")
 
