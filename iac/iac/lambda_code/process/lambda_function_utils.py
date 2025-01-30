@@ -46,7 +46,7 @@ def create_text_file(text):
 
 
 def extract_txt_from_pdf():
-    print("Extracting text from PDF...")
+    print("Starting PDF text extraction...")
     input_path = "/tmp/download"
     output_path = "/tmp/extracted.txt"
 
@@ -115,6 +115,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (xlsx extracted csvs)
         elif filename_ext.lower() == ".xlsx":
+            print("Starting XLSX text extraction...")
             os.rename("/tmp/download", "/tmp/download.xlsx") # openpyxl requires an extension
             wb = load_workbook("/tmp/download.xlsx")
 
@@ -150,6 +151,7 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (docx extracted text)
         elif filename_ext.lower() == ".docx":
+            print("Starting DOCX text extraction...")
             text = '\n'.join([paragraph.text for paragraph in Document("/tmp/download").paragraphs])
             with open("/tmp/extracted.txt", 'w', encoding='utf-8') as file:
                 file.write(text)
@@ -229,9 +231,3 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     else:
         print("Document Store vector data upsertion succeeded.")
         #print(res.json())
-
-
-
-def extract_txt_from_xlsx():
-    csv_file_paths = [os.path.join('/tmp', file) for file in os.listdir('/tmp') if file.endswith('.csv')]
-    return csv_file_paths
