@@ -38,6 +38,13 @@ ssm = boto3.client('ssm')
 
 
 
+def create_text_file(text):
+    print("Creating text file with the text included in the event...")
+    with open("/tmp/event.txt", 'w') as f:
+        f.write(text)
+
+
+
 def extract_txt_from_pdf():
     print("Extracting text from PDF...")
     input_path = "/tmp/download"
@@ -55,15 +62,7 @@ def extract_txt_from_pdf():
 
 
 
-def create_text_file(text):
-    print("Creating text file with the text included in the event...")
-    with open("/tmp/event.txt", 'w') as f:
-        f.write(text)
-
-
-
 def upload_files_s3(rec_id, filename, doc_id=None):
-
     if doc_id is None:
         print("Uploading generated event text file...")
         try:
@@ -78,10 +77,11 @@ def upload_files_s3(rec_id, filename, doc_id=None):
         filename_base, filename_ext = os.path.splitext(filename_decoded)
 
         # Upload the file - flowise (general)
-        print("Uploading original file...")
         if not filename_base.startswith("sffile_"):
             filename_base = "sffile_" + filename_base
+        
         try:
+            print("Uploading original file...")
             file_path_full = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}{filename_ext}"
             s3.upload_file("/tmp/download", bucket_name, file_path_full)
             print(f"File {file_path_full} uploaded to {bucket_name}")
@@ -105,8 +105,8 @@ def upload_files_s3(rec_id, filename, doc_id=None):
                 txt_file = pytesseract.image_to_string(Image.open("/tmp/download_enhanced"))
                 f.write(txt_file)
 
-            print("Uploading image file's extracted text for upsertion...")
             try:
+                print("Uploading image file's extracted text for upsertion...")
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfimg")
                 s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
                 print(f"File {file_path} uploaded to {bucket_name}")
@@ -115,9 +115,9 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (xlsx extracted csvs)
         elif filename_ext.lower() == ".xlsx":
-            print("Uploading XLSX file's extracted csv for upsertion...")
             os.rename("/tmp/download", "/tmp/download.xlsx") # openpyxl requires an extension
             wb = load_workbook("/tmp/download.xlsx")
+
             for sheet_name in wb.sheetnames:
                 sheet = wb[sheet_name]
                 # Open the output CSV file
@@ -126,7 +126,9 @@ def upload_files_s3(rec_id, filename, doc_id=None):
                     # Write the rows of the sheet
                     for row in sheet.iter_rows(values_only=True):
                         writer.writerow(row)
+
                 try:
+                    print("Uploading XLSX file's extracted csv sheet for upsertion...")
                     file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}_{sheet_name}.csv".replace("sffile", "sfxl")
                     s3.upload_file(f"/tmp/excel_{sheet_name}.csv", bucket_name, file_path)
                     print(f"File {file_path} uploaded to {bucket_name}")
@@ -136,9 +138,10 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (pdf extracted text)
         elif filename_ext.lower() == ".pdf":
-            print("Uploading PDF file's extracted text for upsertion...")
             extract_txt_from_pdf() # not using Flowise doc store extractor as it is quite faulty
+
             try:
+                print("Uploading PDF file's extracted text for upsertion...")
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfpdf")
                 s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
                 print(f"File {file_path} uploaded to {bucket_name}")
@@ -147,11 +150,12 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
         # Upload the file - flowise (docx extracted text)
         elif filename_ext.lower() == ".docx":
-            print("Uploading DOCX file's extracted text for upsertion...")
             text = '\n'.join([paragraph.text for paragraph in Document("/tmp/download").paragraphs])
             with open("/tmp/extracted.txt", 'w', encoding='utf-8') as file:
                 file.write(text)
+            
             try:
+                print("Uploading DOCX file's extracted text for upsertion...")
                 file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfdocx")
                 s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
                 print(f"File {file_path} uploaded to {bucket_name}")
