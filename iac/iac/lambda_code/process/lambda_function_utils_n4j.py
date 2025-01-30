@@ -24,7 +24,7 @@ ssm = boto3.client('ssm')
 
 
 
-def extract_txt_from_xlsx():
+def get_xlsx_sheets():
     csv_file_paths = [os.path.join('/tmp', file) for file in os.listdir('/tmp') if file.endswith('.csv')]
     return csv_file_paths
 
@@ -63,7 +63,7 @@ def send_text_n4j(file_path_full):
     files_extracted = []
 
     if extension == ".xlsx": # XLSX files need per-sheet processing
-        files_extracted = extract_txt_from_xlsx()
+        files_extracted = get_xlsx_sheets()
     elif extension in [".docx", ".pdf"] or extension in supported_formats_img: # these file formats need specific processing
         files_extracted.append("/tmp/extracted.txt")
     else: # every other supported format is in the end a text file
