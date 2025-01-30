@@ -81,9 +81,9 @@ def lambda_handler(event, context):
         fw_api_key = fw_get_api_key()
         load_process_upsert(file_path, filename, rec_id, fw_api_key)
 
-        send_text_enabled = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/send_text")['Parameter']['Value']
-        if send_text_enabled == "True" and action == "ImportFile":
-            send_text(file_path_full)
+        send_text_n4j_enabled = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/send_text_n4j")['Parameter']['Value']
+        if send_text_n4j_enabled == "True" and action == "ImportFile":
+            send_text_n4j(file_path_full)
     
     else:
         print("Event source unrecognized.")

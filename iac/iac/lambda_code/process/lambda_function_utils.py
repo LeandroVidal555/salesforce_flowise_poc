@@ -173,9 +173,7 @@ def fw_get_api_key():
 
 def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
     # First search for the target chatflow using Flowise API
-    cf_distro_domain = ssm.get_parameter(
-        Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain"
-    )['Parameter']['Value']
+    cf_distro_domain = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain")['Parameter']['Value']
 
     try:
         res = requests.get(
