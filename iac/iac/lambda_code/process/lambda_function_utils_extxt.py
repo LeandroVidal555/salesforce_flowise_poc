@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import boto3
 from PIL import Image, ImageFilter, ImageEnhance
 import pytesseract
@@ -33,6 +32,22 @@ sm = boto3.client('secretsmanager')
 s3 = boto3.client('s3')
 
 
+def upload_file(rec_id, filename_base, doc_id, prefix, sheet_name=None):
+    try:
+        print("Uploading file's extracted text for upsertion...")
+        if prefix == "sfxl":
+            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}_{sheet_name}.csv".replace("sffile", "sfxl")
+            s3.upload_file(f"/tmp/excel_{sheet_name}.csv", bucket_name, file_path)
+        else:
+            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", prefix)
+            s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
+        print(f"File {file_path} uploaded to {bucket_name}")
+    except Exception as e:
+        print(f"Found error while uploading {file_path}: {e}")
+
+    return file_path
+
+
 
 def extract_txt_from_img(rec_id, filename_base, doc_id):
     print("Preparing image for text extraction...")
@@ -50,13 +65,7 @@ def extract_txt_from_img(rec_id, filename_base, doc_id):
         txt_file = pytesseract.image_to_string(Image.open("/tmp/download_enhanced"))
         f.write(txt_file)
 
-    try:
-        print("Uploading image file's extracted text for upsertion...")
-        file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfimg")
-        s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
-        print(f"File {file_path} uploaded to {bucket_name}")
-    except Exception as e:
-        print(f"Found error while uploading {file_path}: {e}")
+    file_path = upload_file(rec_id, filename_base, doc_id, "sfimg")
 
     return file_path
 
@@ -76,13 +85,7 @@ def extract_txt_from_xlsx(rec_id, filename_base, doc_id):
             for row in sheet.iter_rows(values_only=True):
                 writer.writerow(row)
 
-        try:
-            print("Uploading XLSX file's extracted csv sheet for upsertion...")
-            file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}_{sheet_name}.csv".replace("sffile", "sfxl")
-            s3.upload_file(f"/tmp/excel_{sheet_name}.csv", bucket_name, file_path)
-            print(f"File {file_path} uploaded to {bucket_name}")
-        except Exception as e:
-            print(f"Found error while uploading {file_path}: {e}")
+        file_path = upload_file(rec_id, filename_base, doc_id, "sfxl", sheet_name)
 
     return file_path
 
@@ -93,14 +96,8 @@ def extract_txt_from_docx(rec_id, filename_base, doc_id):
     text = '\n'.join([paragraph.text for paragraph in Document("/tmp/download").paragraphs])
     with open("/tmp/extracted.txt", 'w', encoding='utf-8') as file:
         file.write(text)
-    
-    try:
-        print("Uploading DOCX file's extracted text for upsertion...")
-        file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfdocx")
-        s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
-        print(f"File {file_path} uploaded to {bucket_name}")
-    except Exception as e:
-        print(f"Found error while uploading {file_path}: {e}")
+
+    file_path = upload_file(rec_id, filename_base, doc_id, "sfdocx")
 
     return file_path
 
@@ -121,12 +118,6 @@ def extract_txt_from_pdf(rec_id, filename_base, doc_id):
                 for block in blocks:
                     txt_file.write(block[4] + '\n')  # b[4] is the text content
 
-    try:
-        print("Uploading PDF file's extracted text for upsertion...")
-        file_path = f"{bucket_path_fw_ds}/{rec_id}/{filename_base}_{doc_id}.txt".replace("sffile", "sfpdf")
-        s3.upload_file("/tmp/extracted.txt", bucket_name, file_path)
-        print(f"File {file_path} uploaded to {bucket_name}")
-    except Exception as e:
-        print(f"Found error while uploading {file_path}: {e}")
+    file_path = upload_file(rec_id, filename_base, doc_id, "sfpdf")
 
     return file_path

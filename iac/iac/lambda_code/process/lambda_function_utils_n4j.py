@@ -5,7 +5,6 @@ import sys
 import boto3
 
 
-
 # Get environment vars
 common_prefix = os.getenv("COMMON_PREFIX")
 env = os.getenv("ENV")
