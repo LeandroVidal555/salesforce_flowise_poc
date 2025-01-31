@@ -169,15 +169,35 @@ def upload_files_s3(rec_id, filename, doc_id=None):
 
 
 def fw_get_api_key():
-    # Get FW api key
-    print("Getting SM creds...")
+    print("Getting FW api key from SM...")
     res = sm.get_secret_value(SecretId=secret_fw_creds_name)
 
     return res["SecretString"]
 
 
 
-def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
+def upsert_vector(cf_distro_domain, chatflow, fw_api_key, file_path, file_path_source, rec_id):
+    print("Upserting vector data...")
+    try:
+        res = requests.post(
+            f"https://{cf_distro_domain}/api/v1/vector/upsert/{chatflow["id"]}",
+            headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
+            json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
+        )
+    except Exception as e:
+        print(f"Found error while upserting: {e}")
+        sys.exit(1)
+
+    if res.status_code != 200:
+        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
+        sys.exit(1)
+    else:
+        print("Document Store vector data upsertion succeeded.")
+        #print(res.json())
+
+
+
+def upsert_process(file_path, orig_filename, rec_id, fw_api_key):
     # First search for the target chatflow using Flowise API
     cf_distro_domain = ssm.get_parameter(Name=f"/{common_prefix}-{env}/pipeline/cf_distro_domain")['Parameter']['Value']
 
@@ -203,31 +223,12 @@ def load_process_upsert(file_path, orig_filename, rec_id, fw_api_key):
             print(f"Could not find chatflow '{fw_chatflow}'")
             sys.exit(1)
 
-    # if it's an excel file, use a prefix that will match all the file's sheets
+    # if it's an excel file, use a slightly different approach for the prefix
     if orig_filename.endswith(".xlsx"):
-        file_path = "_".join(file_path.split("_")[:-1])
+        file_path = "_".join(file_path.split("_")[:-1]) # this is the prefix that matches all of the file's sheets
         file_path_source = file_path + ".xlsx"
     else:
         file_path_source = "/".join(file_path.split("/")[1:])
     
-    # DUPLICATE CHECK
-    #pgres_solve_duplicate(file_path_source)
-    
     # UPSERT VECTOR DATA
-    print("Upserting vector data...")
-    try:
-        res = requests.post(
-            f"https://{cf_distro_domain}/api/v1/vector/upsert/{chatflow["id"]}",
-            headers={"Authorization":f"Bearer {fw_api_key}","Content-Type":"application/json"},
-            json={"overrideConfig":{"prefix":f"{file_path}","metadata":{"source": file_path_source, "record_id": rec_id}}}
-        )
-    except Exception as e:
-        print(f"Found error while upserting: {e}")
-        sys.exit(1)
-
-    if res.status_code != 200:
-        print(f"Error in upsertion procedure, got from API: {res.status_code}: {res.reason}")
-        sys.exit(1)
-    else:
-        print("Document Store vector data upsertion succeeded.")
-        #print(res.json())
+    upsert_vector(cf_distro_domain, chatflow, fw_api_key, file_path, file_path_source, rec_id)
