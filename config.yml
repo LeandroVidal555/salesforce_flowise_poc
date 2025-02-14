@@ -53,7 +53,8 @@ compute:
   lambda_envvars_graph:
     TEST: 'TEST'
   lambda_envvars_tools:
-    TEST: 'TEST'
+    EMAIL_SENDER: 'lmv.vidal@gmail.com'
+    SECRET_GMAIL_APP_PASS_NAME: 'sf-fw-poc-gmail-app-password' 
 
 access:
   pgres_port: 5432

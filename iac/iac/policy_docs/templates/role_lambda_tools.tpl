@@ -33,6 +33,19 @@
                 "ssm:GetParameter"
             ],
             "Resource": "arn:aws:ssm:${REGION}:${AWS_ACCOUNT_ID}:*"
+        },
+        {
+            "Description": "Secrets Manager",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": [
+                "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT_ID}:secret:sf-fw-poc-gmail-app-password-*"
+            ]
         }
     ]
 }
