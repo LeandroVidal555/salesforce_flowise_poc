@@ -92,5 +92,12 @@
   "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-wa-sg:vpcId=vpc-0684ed7592b1272c1": {
     "securityGroupId": "sg-053561092c8b9a00b",
     "allowAllOutbound": false
+  },
+  "acknowledged-issue-numbers": [
+    32775
+  ],
+  "security-group:account=649999766497:region=us-east-1:securityGroupName=sf-fw-poc-ec2-n8n-sg:vpcId=vpc-0684ed7592b1272c1": {
+    "securityGroupId": "sg-08c50ef651eee1654",
+    "allowAllOutbound": false
   }
 }

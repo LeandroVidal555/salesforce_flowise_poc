@@ -42,6 +42,7 @@ class ComputeStack(cdk.Stack):
         role_lambda_tools = iam.Role.from_role_name(self, "Role_Lambda_Tools", role_name=f"{cg['common_prefix']}-{cg['env']}-lambda-tools-role")
         sg_ec2_fw = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2_FW", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-fw-sg", vpc=vpc)
         sg_ec2_wa = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2_WA", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-wa-sg", vpc=vpc)
+        sg_ec2_n8n = ec2.SecurityGroup.from_lookup_by_name(self, "SG_EC2_N8N", security_group_name=f"{cg['common_prefix']}-{cg['env']}-ec2-n8n-sg", vpc=vpc)
 
 
         #####################################################
@@ -140,6 +141,50 @@ class ComputeStack(cdk.Stack):
         ssm.StringParameter(
             self, "SSMParam_EC2_DNS_WA",
             parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_wa",
+            string_value=ec2_instance.instance_public_dns_name
+        )
+
+
+        #####################################################
+        ##### EC2 - n8n Instance ############################
+        #####################################################
+
+        volume = ec2.BlockDevice(
+            device_name=cs["ebs_device_name"],
+            volume=ec2.BlockDeviceVolume.ebs(
+                volume_size=27,
+                volume_type=ec2.EbsDeviceVolumeType.GP3,
+                delete_on_termination=False
+            )
+        )
+        
+        # Define the EC2 instance
+        ec2_instance = ec2.Instance(
+            self, "EC2_N8N_Instance",
+            instance_name=f"{cg['common_prefix']}-{cg['env']}-n8n",
+            instance_type=ec2.InstanceType(cs["ec2_machine_type_n8n"]),
+            #machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            machine_image=ec2.MachineImage.generic_linux({
+                cg['region']: cs['ec2_machine_ami_n8n']
+            }),
+            block_devices=[volume],
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            security_group=sg_ec2_n8n,
+            key_pair=keypair_ec2,
+            role=role_ec2,
+            user_data_causes_replacement=True
+        )
+
+        # Read user data script and load it to the EC2 Backend instance's config
+        with open("iac/ec2_user_data/ec2_user_data_n8n.sh", 'r') as file:
+            user_data_n8n = file.read()
+
+        ec2_instance.add_user_data(user_data_n8n)
+
+        ssm.StringParameter(
+            self, "SSMParam_EC2_DNS_N8N",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_n8n",
             string_value=ec2_instance.instance_public_dns_name
         )
 

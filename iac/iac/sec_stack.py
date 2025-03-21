@@ -67,7 +67,7 @@ class SecurityStack(cdk.Stack):
             managed_policies = [
                 iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore")
             ],
-            description="Role for the EC2 FLowise instance"
+            description="Role for the EC2 instances"
         )
         attach_policy_doc(self, "role_ec2", role_ec2)
 
@@ -128,30 +128,15 @@ class SecurityStack(cdk.Stack):
 
 
         #####################################################
-        ##### EC2 - Flowise WebApp + Neo4J instance #########
+        ##### EC2 - WebApp + Neo4J instance #################
         #####################################################
-
-        # Create a security group for the ALB pointing to EC2 instance
-        #sg_alb_ec2 = ec2.SecurityGroup(
-        #    self, "SG_ALB_WS",
-        #    security_group_name = f"{cg['common_prefix']}-{cg['env']}-alb-ws-sg",
-        #    vpc = vpc,
-        #    description = "SG for ALB pointing to the WebServer in EC2 instance"
-        #)
-
-        # Add rules to allow access from 8080 CloudFront origins
-        #sg_alb_ec2.add_ingress_rule(
-        #    peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
-        #    connection=ec2.Port.tcp(8080),
-        #    description="Allow HTTPS traffic only from 8080 CloudFront origins"
-        #)
 
         # Create a security group for the EC2 instance
         sg_ec2_wa = ec2.SecurityGroup(
             self, "SG_EC2_WA",
             security_group_name = f"{cg['common_prefix']}-{cg['env']}-ec2-wa-sg",
             vpc = vpc,
-            description = "SG for EC2 Flowise instance"
+            description = "SG for EC2 Webapp + Neo4J instance"
         )
 
         # Allow traffic from local SSH
@@ -177,8 +162,37 @@ class SecurityStack(cdk.Stack):
 
         # Add rules to allow access to RDS from the EC2 instance
         sg_postgres.add_ingress_rule(peer=sg_ec2_wa, connection=ec2.Port.tcp(cs["pgres_port"]))
-        # sg_postgres.add_ingress_rule(peer=nlb_ip1, connection=ec2.Port.tcp(cs["pgres_port"]))
-        # sg_postgres.add_ingress_rule(peer=nlb_ip2, connection=ec2.Port.tcp(cs["pgres_port"]))
+
+
+        #####################################################
+        ##### EC2 - N8N instance ############################
+        #####################################################
+
+        # Create a security group for the EC2 instance
+        sg_ec2_n8n = ec2.SecurityGroup(
+            self, "SG_EC2_N8N",
+            security_group_name = f"{cg['common_prefix']}-{cg['env']}-ec2-n8n-sg",
+            vpc = vpc,
+            description = "SG for EC2 N8N instance"
+        )
+
+        # Allow traffic from CF
+        sg_ec2_n8n.add_ingress_rule(
+            peer=ec2.Peer.ipv4(cs['local_ip']),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH traffic from local PC LMV"
+        )
+
+        # Allow traffic from CF - UI
+        sg_ec2_n8n.add_ingress_rule(
+            peer=ec2.Peer.prefix_list(cs['cf_prefix_list']),
+            connection=ec2.Port.tcp(5678),
+            description="Allow traffic from CF"
+        )
+        
+
+        # Add rules to allow access to RDS from the EC2 instance
+        sg_postgres.add_ingress_rule(peer=sg_ec2_n8n, connection=ec2.Port.tcp(cs["pgres_port"]))
 
 
         #####################################################

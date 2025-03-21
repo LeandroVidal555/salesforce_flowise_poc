@@ -6,7 +6,8 @@
             "Effect": "Allow",
             "Action": "secretsmanager:GetSecretValue",
             "Resource": [
-                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-pgres-creds-*"
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-pgres-creds-*",
+                "arn:aws:secretsmanager:us-east-1:649999766497:secret:sf-fw-poc-n8n-pgres-creds-*"
             ]
         },
         {

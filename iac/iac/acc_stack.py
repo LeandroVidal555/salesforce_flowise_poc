@@ -47,6 +47,11 @@ class AccessStack(cdk.Stack):
             string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_wa"
         ).string_value
 
+        ec2_instance_dns_n8n = ssm.StringParameter.from_string_parameter_name(
+            self, "SSMParam_EC2_DNS_N8N",
+            string_parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/ec2_instance_dns_n8n"
+        ).string_value
+
         lambda_fn_process = _lambda.Function.from_function_name(
             self, "Lambda_Process_Function",
             function_name=f"{cg['common_prefix']}-{cg['env']}-process"
@@ -141,7 +146,7 @@ class AccessStack(cdk.Stack):
 
         
         #####################################################
-        ##### CLOUDFRONT - EC2 Webservice ###################
+        ##### CLOUDFRONT - EC2 Flowise Webservice ###########
         #####################################################
     
         # CloudFront origin pointing to the ALB in front of the EC2 instance
@@ -206,7 +211,7 @@ class AccessStack(cdk.Stack):
 
         
         #####################################################
-        ##### CLOUDFRONT - EC2 Go Backend & S3 WebSite ######
+        ##### CLOUDFRONT - EC2 N4J WebApp & S3 WebSite ######
         #####################################################
 
         s3_website_bucket = s3.Bucket.from_bucket_name(self, "SiteBucket", bucket_name=f"{cg['common_prefix']}-{cg['env']}-ui")
@@ -268,6 +273,40 @@ class AccessStack(cdk.Stack):
         ssm.StringParameter(
             self, "SSMParam_CF_DISTRO_DOMAIN_WA",
             parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/cf_distro_domain_webapp",
+            string_value=cf_distro.distribution_domain_name
+        )
+
+
+
+        #####################################################
+        ##### CLOUDFRONT - EC2 N8N UI #######################
+        #####################################################
+
+        ui_origin = cf_origins.HttpOrigin(
+            domain_name=ec2_instance_dns_n8n, # EC2 instance public DNS
+            http_port=5678,
+            origin_id=f"{cg['common_prefix']}-{cg['env']}-n8n-ui-origin",
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+            read_timeout=cdk.Duration.seconds(60)
+        )
+        
+        cache_policy_ui = cloudfront.CachePolicy.CACHING_DISABLED if cs["cache_policy_ui_n8n"] == "disabled" else cloudfront.CachePolicy.CACHING_OPTIMIZED
+        # CloudFront distribution
+        cf_distro = cloudfront.Distribution(
+            self, "CF_N8N_Distribution",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=ui_origin,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=cache_policy_ui,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+            ),
+            price_class = cloudfront.PriceClass.PRICE_CLASS_100
+        )
+
+        ssm.StringParameter(
+            self, "SSMParam_CF_DISTRO_DOMAIN_N8N",
+            parameter_name=f"/{cg['common_prefix']}-{cg['env']}/pipeline/cf_distro_domain_n8n",
             string_value=cf_distro.distribution_domain_name
         )
 
